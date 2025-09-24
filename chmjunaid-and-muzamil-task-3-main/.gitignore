@@ -1,0 +1,30 @@
+# dependencies
+node_modules/
+
+# dotenv environment variables
+.env
+.env.*
+
+# build output
+.svelte-kit/
+build/
+dist/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE/editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Drizzle ORM output
+/drizzle/

@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
 	import ScrollArea from '$lib/components/ScrollArea.svelte';
+	import { chatStore } from '$lib/stores/chatStore';
 
 	export let isOpen: boolean;
 	export let onToggle: () => void;
@@ -9,16 +11,16 @@
 	export let currentChatId: string;
 	export let handleSelectChat: (chatId: string) => void;
 
-	interface Chat {
-		id: string;
-		title: string;
-		timestamp: Date;
-		isAutoRenamed?: boolean;
-	}
+	// Use the chat store
+	$: conversations = $chatStore.conversations;
+	$: currentChatId = $chatStore.currentChatId || '';
 
-	export let chats: Chat[] = [];
-	export let onChatRename: (chatId: string, newTitle: string) => void;
-	export let onChatDelete: (chatId: string) => void;
+	// Remove unused exports
+
+	// Load conversations on mount
+	onMount(() => {
+		chatStore.loadConversations();
+	});
 
 	const userInfo = {
 		name: $page.data.user?.name || "User",
@@ -27,9 +29,10 @@
 	};
 
 
-	const formatChatTime = (date: Date) => {
+	const formatChatTime = (date: Date | string) => {
 		const now = new Date();
-		const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+		const chatDate = typeof date === 'string' ? new Date(date) : date;
+		const diffInHours = Math.floor((now.getTime() - chatDate.getTime()) / (1000 * 60 * 60));
 		
 		if (diffInHours < 1) return "Just now";
 		if (diffInHours < 24) return `${diffInHours}h ago`;
@@ -59,8 +62,8 @@
 		showChatDropdown = null;
 	};
 
-	const handleDeleteChat = (chatId: string) => {
-		onChatDelete(chatId);
+	const handleDeleteChat = async (chatId: string) => {
+		await chatStore.deleteConversation(chatId);
 		showChatDropdown = null;
 	};
 </script>
@@ -115,11 +118,15 @@
 		<div class="relative z-10 flex-1 overflow-hidden">
 			<ScrollArea class="h-full">
 				<div class="p-4 space-y-2">
-					{#each chats as chat}
+					{#each conversations as conversation}
 						<div class="relative group">
 							<div
-								on:click={() => handleSelectChat(chat.id)}
-								class="w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-300 text-left cursor-pointer {chat.id === currentChatId ? 'bg-gradient-to-r from-blue-600/20 via-indigo-600/15 to-purple-600/20 border border-blue-500/30' : 'hover:bg-gradient-to-r hover:from-gray-800/60 hover:via-gray-700/50 hover:to-gray-800/60'}"
+								on:click={() => handleSelectChat(conversation.id)}
+								on:keydown={(e) => e.key === 'Enter' && handleSelectChat(conversation.id)}
+								class="w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-300 text-left cursor-pointer {conversation.id === currentChatId ? 'bg-gradient-to-r from-blue-600/20 via-indigo-600/15 to-purple-600/20 border border-blue-500/30' : 'hover:bg-gradient-to-r hover:from-gray-800/60 hover:via-gray-700/50 hover:to-gray-800/60'}"
+								role="button"
+								tabindex="0"
+								aria-label="Select conversation: {conversation.title}"
 							>
 								<!-- Chat Icon -->
 								<div class="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
@@ -130,32 +137,33 @@
 								
 								<!-- Chat Info -->
 								<div class="flex-1 min-w-0">
-									<p class="text-sm font-medium text-white truncate">{chat.title}</p>
-									<p class="text-xs text-gray-400">{formatChatTime(chat.timestamp)}</p>
+									<p class="text-sm font-medium text-white truncate">{conversation.title}</p>
+									<p class="text-xs text-gray-400">{formatChatTime(conversation.updatedAt)}</p>
 								</div>
 
 								<!-- Three Dots Menu -->
 								<div class="relative dropdown">
 									<button
-										on:click|stopPropagation={() => showChatDropdown = showChatDropdown === chat.id ? null : chat.id}
+										on:click|stopPropagation={() => showChatDropdown = showChatDropdown === conversation.id ? null : conversation.id}
 										class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-white hover:bg-gray-700/50 flex items-center justify-center p-1 rounded-lg transition-all duration-200"
 										aria-label="Chat options"
+										type="button"
 									>
 										<svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
 										</svg>
 									</button>
 									
-									{#if showChatDropdown === chat.id}
+									{#if showChatDropdown === conversation.id}
 										<div class="absolute right-0 top-full mt-1 w-32 bg-black border border-gray-600 rounded-lg shadow-lg z-50">
 											<button
-												on:click={() => handleRenameChat(chat.id)}
+												on:click={() => handleRenameChat(conversation.id)}
 												class="w-full text-left px-3 py-2 text-white hover:bg-gray-800 transition-colors rounded-lg text-sm"
 											>
 												Rename
 											</button>
 											<button
-												on:click={() => handleDeleteChat(chat.id)}
+												on:click={() => handleDeleteChat(conversation.id)}
 												class="w-full text-left px-3 py-2 text-white hover:bg-gray-800 transition-colors rounded-lg text-sm"
 											>
 												Delete

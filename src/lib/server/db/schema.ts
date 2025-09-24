@@ -57,11 +57,36 @@ export const verificationTokens = pgTable("verification_tokens", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Chat conversations table
+export const chatConversations = pgTable("chat_conversations", {
+  id: varchar("id", { length: 255 }).primaryKey(),
+  userId: varchar("user_id", { length: 255 }).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  isAutoRenamed: boolean("is_auto_renamed").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Chat messages table with tree structure support
+export const chatMessages = pgTable("chat_messages", {
+  id: varchar("id", { length: 255 }).primaryKey(),
+  conversationId: varchar("conversation_id", { length: 255 }).notNull(),
+  role: varchar("role", { length: 50 }).notNull(), // 'user' or 'assistant'
+  content: text("content").notNull(),
+  parentId: varchar("parent_id", { length: 255 }), // nullable, points to previous message in conversation
+  versionGroupId: varchar("version_group_id", { length: 255 }), // groups versions of the same "slot" in conversation
+  versionNumber: integer("version_number").default(1), // increments on each edit/regeneration
+  isEdited: boolean("is_edited").default(false), // marks if this is an edited version
+  isActive: boolean("is_active").default(true), // marks if this version is currently active in the conversation
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),
   accounts: many(accounts),
   verificationTokens: many(verificationTokens),
+  chatConversations: many(chatConversations),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -84,6 +109,35 @@ export const verificationTokensRelations = relations(
     user: one(users, {
       fields: [verificationTokens.userId],
       references: [users.id],
+    }),
+  })
+);
+
+export const chatConversationsRelations = relations(
+  chatConversations,
+  ({ one, many }) => ({
+    user: one(users, {
+      fields: [chatConversations.userId],
+      references: [users.id],
+    }),
+    messages: many(chatMessages),
+  })
+);
+
+export const chatMessagesRelations = relations(
+  chatMessages,
+  ({ one, many }) => ({
+    conversation: one(chatConversations, {
+      fields: [chatMessages.conversationId],
+      references: [chatConversations.id],
+    }),
+    parent: one(chatMessages, {
+      fields: [chatMessages.parentId],
+      references: [chatMessages.id],
+      relationName: "messageParent",
+    }),
+    children: many(chatMessages, {
+      relationName: "messageParent",
     }),
   })
 );

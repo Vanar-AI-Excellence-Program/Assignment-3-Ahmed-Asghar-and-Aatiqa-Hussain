@@ -15,6 +15,20 @@
       "when": 1756887854629,
       "tag": "0001_equal_lake",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1756888000000,
+      "tag": "0002_add_chat_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1756889000000,
+      "tag": "0003_add_tree_structure_to_messages",
+      "breakpoints": true
     }
   ]
 }

@@ -3,53 +3,31 @@
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import ChatMessage from './components/ChatMessage.svelte';
+	import TreeChatMessage from './components/TreeChatMessage.svelte';
 	import ChatInput from './components/ChatInput.svelte';
 	import TypingIndicator from './components/TypingIndicator.svelte';
 	import Sidebar from './components/Sidebar.svelte';
 	import ScrollArea from '$lib/components/ScrollArea.svelte';
 	import EnhancedMessageRenderer from '$lib/components/EnhancedMessageRenderer.svelte';
-	import { clientChatService, type ChatMessage as ChatMessageType } from '$lib/services/clientChatService';
+	import { chatStore } from '$lib/stores/chatStore';
 
 	// Redirect if not authenticated
 	$: if (!$page.data.user) {
 		goto('/login');
 	}
 
-	interface Message {
-		id: string;
-		text: string;
-		isUser: boolean;
-		timestamp: Date;
-		isStreaming?: boolean;
-	}
+	// Use chat store
+	$: messages = $chatStore.messages;
+	$: isTyping = $chatStore.isTyping;
+	$: isStreaming = $chatStore.isStreaming;
+	$: error = $chatStore.error;
+	$: conversations = $chatStore.conversations;
+	$: currentChatId = $chatStore.currentChatId || '';
 
-	interface Chat {
-		id: string;
-		title: string;
-		timestamp: Date;
-		isAutoRenamed?: boolean;
-	}
-
-	let messages: Message[] = [];
-	let isTyping = false;
-	let isStreaming = false;
 	let sidebarOpen = true;
-	let currentChatId = "1";
-	
-	// Initialize with first chat if available
-	$: if (chats.length > 0 && !chats.find(chat => chat.id === currentChatId)) {
-		currentChatId = chats[0].id;
-	}
 	let selectedModel = "models/gemini-1.5-flash";
 	let scrollAreaRef: any;
-	let error: string | null = null;
 	let showModelDropdown = false;
-	let chats: Chat[] = [
-		{ id: "1", title: "Getting started with AI", timestamp: new Date(Date.now() - 1000 * 60 * 30), isAutoRenamed: true },
-		{ id: "2", title: "React development tips", timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), isAutoRenamed: true },
-		{ id: "3", title: "Machine learning basics", timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), isAutoRenamed: true },
-		{ id: "4", title: "Web design principles", timestamp: new Date(Date.now() - 1000 * 60 * 60 * 48), isAutoRenamed: true },
-	];
 
 	const scrollToBottom = () => {
 		if (scrollAreaRef) {
@@ -66,124 +44,19 @@
 
 	const handleSendMessage = async (text: string) => {
 		if (!text.trim() || isTyping || isStreaming) return;
-
-		const userMessage: Message = {
-			id: Date.now().toString(),
-			text,
-			isUser: true,
-			timestamp: new Date(),
-		};
-
-		// Auto-rename chat if this is the first user message and chat hasn't been auto-renamed
-		const isFirstUserMessage = messages.length === 0;
-		if (isFirstUserMessage) {
-			autoRenameChat(currentChatId, text);
-		}
-		
-		messages = [...messages, userMessage];
-		
-		isTyping = true;
-		isStreaming = true;
-		error = null;
-
-		// Add placeholder AI message for streaming
-			const aiMessage: Message = {
-				id: (Date.now() + 1).toString(),
-			text: '',
-				isUser: false,
-				timestamp: new Date(),
-			isStreaming: true,
-		};
-		messages = [...messages, aiMessage];
-
-		try {
-			// Convert messages to conversation history format
-			const conversationHistory: ChatMessageType[] = messages
-				.filter(msg => !msg.isStreaming)
-				.map(msg => ({
-					id: msg.id,
-					role: msg.isUser ? 'user' : 'assistant',
-					content: msg.text,
-					timestamp: msg.timestamp
-				}));
-
-			// Use streaming response with word-by-word streaming
-			let accumulatedContent = '';
-			for await (const chunk of clientChatService.sendStreamingMessage(text, conversationHistory, selectedModel)) {
-				if (chunk.type === 'chunk' && chunk.content) {
-					// Each chunk now contains a word or whitespace
-					accumulatedContent += chunk.content;
-					
-					// Update the AI message content with the new word
-					const messageIndex = messages.findIndex(m => m.id === aiMessage.id);
-					if (messageIndex !== -1) {
-						messages[messageIndex] = {
-							...messages[messageIndex],
-							text: accumulatedContent
-						};
-						messages = [...messages]; // Trigger reactivity
-					}
-				} else if (chunk.type === 'complete') {
-					// Finalize the message
-					const messageIndex = messages.findIndex(m => m.id === aiMessage.id);
-					if (messageIndex !== -1) {
-						messages[messageIndex] = {
-							...messages[messageIndex],
-							text: accumulatedContent,
-							isStreaming: false
-						};
-						messages = [...messages];
-					}
-					break;
-				} else if (chunk.type === 'error') {
-					throw new Error(chunk.error || 'Unknown error occurred');
-				}
-			}
-		} catch (err) {
-			console.error('Error sending message:', err);
-			error = err instanceof Error ? err.message : 'Failed to send message';
-			
-			// Update the AI message with error
-			const messageIndex = messages.findIndex(m => m.id === aiMessage.id);
-			if (messageIndex !== -1) {
-				messages[messageIndex] = {
-					...messages[messageIndex],
-					text: `Sorry, I encountered an error: ${error}`,
-					isStreaming: false
-				};
-				messages = [...messages];
-			}
-		} finally {
-			isTyping = false;
-			isStreaming = false;
-		}
+		await chatStore.sendMessage(text);
 	};
 
 	const handleClearChat = () => {
-		messages = [];
-		isTyping = false;
-		error = null;
+		chatStore.startNewConversation();
 	};
 
 	const handleNewChat = () => {
-		const newChatId = Date.now().toString();
-		currentChatId = newChatId;
-		// Add new chat to the list with default title and not auto-renamed
-		const newChat: Chat = {
-			id: newChatId,
-			title: "New Chat",
-			timestamp: new Date(),
-			isAutoRenamed: false
-		};
-		chats = [newChat, ...chats];
-		handleClearChat();
-		console.log('New chat created:', newChatId, 'Total chats:', chats.length);
+		chatStore.startNewConversation();
 	};
 
-	const handleSelectChat = (chatId: string) => {
-		currentChatId = chatId;
-		// In a real app, you would load the chat history here
-		handleClearChat();
+	const handleSelectChat = async (chatId: string) => {
+		await chatStore.loadMessages(chatId);
 	};
 
 	const handleBack = () => {
@@ -193,7 +66,6 @@
 	const handleModelChange = (model: string) => {
 		selectedModel = model;
 		showModelDropdown = false;
-		// In a real app, you would switch the AI model here
 		console.log("Model changed to:", model);
 	};
 
@@ -211,59 +83,10 @@
 		}
 	};
 
-	const extractTopicFromMessage = (message: string): string => {
-		// Simple topic extraction - take first few words and clean them up
-		const words = message.trim().split(/\s+/).slice(0, 4);
-		let topic = words.join(' ');
-		
-		// Remove common question words and clean up
-		topic = topic.replace(/^(what|how|why|when|where|can|could|would|should|is|are|do|does|did)\s+/i, '');
-		topic = topic.replace(/\?+$/, ''); // Remove trailing question marks
-		
-		// Capitalize first letter
-		topic = topic.charAt(0).toUpperCase() + topic.slice(1);
-		
-		// Limit length
-		if (topic.length > 30) {
-			topic = topic.substring(0, 27) + '...';
-		}
-		
-		return topic || 'New Chat';
-	};
-
-	const handleChatRename = (chatId: string, newTitle: string) => {
-		const chatIndex = chats.findIndex(chat => chat.id === chatId);
-		if (chatIndex !== -1) {
-			chats[chatIndex] = { ...chats[chatIndex], title: newTitle, isAutoRenamed: true };
-			chats = [...chats]; // Trigger reactivity
-		}
-	};
-
-	const handleChatDelete = (chatId: string) => {
-		chats = chats.filter(chat => chat.id !== chatId);
-		// If we deleted the current chat, switch to the first available chat or create a new one
-		if (currentChatId === chatId) {
-			if (chats.length > 0) {
-				currentChatId = chats[0].id;
-			} else {
-				handleNewChat();
-			}
-		}
-		console.log('Chat deleted:', chatId, 'Remaining chats:', chats.length);
-	};
-
-	const autoRenameChat = (chatId: string, firstMessage: string) => {
-		console.log('Auto-rename called for chat:', chatId, 'with message:', firstMessage);
-		const chatIndex = chats.findIndex(chat => chat.id === chatId);
-		console.log('Chat found at index:', chatIndex, 'isAutoRenamed:', chats[chatIndex]?.isAutoRenamed);
-		
-		if (chatIndex !== -1 && !chats[chatIndex].isAutoRenamed) {
-			const newTitle = extractTopicFromMessage(firstMessage);
-			console.log('Renaming chat to:', newTitle);
-			chats[chatIndex] = { ...chats[chatIndex], title: newTitle, isAutoRenamed: true };
-			chats = [...chats]; // Trigger reactivity
-		}
-	};
+	// Load conversations on mount
+	onMount(() => {
+		chatStore.loadConversations();
+	});
 </script>
 
 <svelte:head>
@@ -281,9 +104,6 @@
 		{handleNewChat}
 		{currentChatId}
 		{handleSelectChat}
-		{chats}
-		onChatRename={handleChatRename}
-		onChatDelete={handleChatDelete}
 	/>
 	
 	<div class="flex-1 flex flex-col relative z-0">
@@ -458,14 +278,19 @@
 					</div>
 				{:else}
 				{#each messages as message (message.id)}
-					<ChatMessage
-						{message}
-						>
-							<EnhancedMessageRenderer
-								content={message.text}
-								isStreaming={message.isStreaming || false}
+					<TreeChatMessage
+						message={{
+							id: message.id,
+							role: message.role,
+							content: message.content,
+							timestamp: message.timestamp,
+							parentId: message.parentId,
+							versionGroupId: message.versionGroupId,
+							versionNumber: message.versionNumber,
+							isEdited: message.isEdited,
+							isActive: message.isActive
+						}}
 					/>
-						</ChatMessage>
 				{/each}
 				{/if}
 				{#if isTyping && !isStreaming}
