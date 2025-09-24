@@ -22,11 +22,7 @@
   let versionsLoaded = false;
 
   $: maybeLoadVersions = (async () => {
-    // Auto-load versions when message has edits/regenerations
-    const needsVersions =
-      (message.role === 'assistant') ||
-      (message.role === 'user' && ((message.isEdited ?? false) || (message.versionNumber ?? 1) > 1));
-    if (needsVersions && !versionsLoaded) {
+    if (!versionsLoaded) {
       try {
         isLoadingVersions = true;
         versions = await chatStore.getMessageVersions(message.id);
@@ -50,11 +46,6 @@
   };
 
   const handleShowVersions = async () => {
-    if (showVersions) {
-      showVersions = false;
-      return;
-    }
-
     isLoadingVersions = true;
     try {
       versions = await chatStore.getMessageVersions(message.id);
@@ -69,7 +60,9 @@
   const handleSwitchVersion = async (targetMessageId?: string, direction?: "next" | "prev") => {
     try {
       await chatStore.switchMessageVersion(message.id, targetMessageId, direction);
-      showVersions = false;
+      // Refresh versions to reflect new active state and keep panel open
+      versions = await chatStore.getMessageVersions(message.id);
+      showVersions = true;
     } catch (error) {
       console.error("Error switching version:", error);
     }
@@ -160,7 +153,7 @@
         {/if}
       </div>
 
-      {#if versions && versions.length > 1}
+      {#if versions && versions.length > 0}
         <div class="mt-2 flex items-center justify-center gap-3 text-xs text-gray-300">
           <button
             on:click={() => handleSwitchVersion(undefined, 'prev')}
@@ -181,6 +174,9 @@
           >
             →
           </button>
+          {#if versions.length === 1}
+            <span class="text-gray-500">not versioned yet</span>
+          {/if}
         </div>
       {/if}
     </div>

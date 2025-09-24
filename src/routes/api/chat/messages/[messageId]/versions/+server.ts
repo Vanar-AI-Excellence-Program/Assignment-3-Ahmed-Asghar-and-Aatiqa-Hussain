@@ -39,6 +39,11 @@ export const GET: RequestHandler = async ({ locals, params }) => {
       return json({ error: "Conversation not found" }, { status: 404 });
     }
 
+    // If this message has no version group yet, treat it as a single-version group
+    if (!message[0].versionGroupId) {
+      return json({ versions: [message[0]] });
+    }
+
     // Get all versions of this message
     const versions = await db
       .select()

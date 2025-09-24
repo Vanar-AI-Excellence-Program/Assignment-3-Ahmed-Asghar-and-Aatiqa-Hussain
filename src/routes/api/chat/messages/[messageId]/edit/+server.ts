@@ -60,6 +60,9 @@ export const POST: RequestHandler = async ({ locals, params, request }) => {
     const currentUserMax = Number(maxUserVersionRow?.[0]?.v ?? 0);
     const nextUserVersion = currentUserMax + 1;
 
+    // Preserve original timestamp so the edited message keeps its position in flow
+    const originalTimestamp = userMessage[0].timestamp as unknown as Date;
+
     // Create a new version of the user message with edited content
     const editedUserMessageId = nanoid();
     const [editedUserMessage] = await db
@@ -74,7 +77,7 @@ export const POST: RequestHandler = async ({ locals, params, request }) => {
         versionNumber: nextUserVersion,
         isEdited: true,
         isActive: true,
-        timestamp: new Date(),
+        timestamp: originalTimestamp ?? new Date(),
       })
       .returning();
 
@@ -104,12 +107,10 @@ export const POST: RequestHandler = async ({ locals, params, request }) => {
     // Generate new AI response for the edited message
     const aiResponse = await aiService.generateContextualResponse(
       content.trim(),
-      conversationContext
-        .slice(0, -1)
-        .map((m) => ({
-          role: m.role as "user" | "assistant",
-          content: m.content,
-        }))
+      conversationContext.slice(0, -1).map((m) => ({
+        role: m.role as "user" | "assistant",
+        content: m.content,
+      }))
     );
 
     // Create new assistant response in its own version group (so future regenerations branch correctly)
