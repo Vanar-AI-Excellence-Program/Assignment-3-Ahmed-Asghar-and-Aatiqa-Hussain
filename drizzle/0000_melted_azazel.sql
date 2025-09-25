@@ -4,9 +4,10 @@ EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "accounts" (
+DO $$ BEGIN
+  CREATE TABLE IF NOT EXISTS "accounts" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"user_id" uuid NOT NULL,
+	"user_id" varchar(255) NOT NULL,
 	"type" text NOT NULL,
 	"provider" text NOT NULL,
 	"provider_account_id" text NOT NULL,
@@ -17,27 +18,33 @@ CREATE TABLE IF NOT EXISTS "accounts" (
 	"scope" text,
 	"id_token" text,
 	"session_state" text
-);
+  );
+EXCEPTION WHEN duplicate_table THEN NULL; END $$;
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "password_reset_tokens" (
+DO $$ BEGIN
+  CREATE TABLE IF NOT EXISTS "password_reset_tokens" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"user_id" uuid NOT NULL,
+	"user_id" varchar(255) NOT NULL,
 	"token" text NOT NULL,
 	"expires" timestamp NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "password_reset_tokens_token_unique" UNIQUE("token")
-);
+  );
+EXCEPTION WHEN duplicate_table THEN NULL; END $$;
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "sessions" (
+DO $$ BEGIN
+  CREATE TABLE IF NOT EXISTS "sessions" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"user_id" uuid NOT NULL,
+	"user_id" varchar(255) NOT NULL,
 	"session_token" text NOT NULL,
 	"expires" timestamp NOT NULL,
 	CONSTRAINT "sessions_session_token_unique" UNIQUE("session_token")
-);
+  );
+EXCEPTION WHEN duplicate_table THEN NULL; END $$;
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "users" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+DO $$ BEGIN
+  CREATE TABLE IF NOT EXISTS "users" (
+	"id" varchar(255) PRIMARY KEY NOT NULL,
 	"name" text,
 	"email" text NOT NULL,
 	"email_verified" timestamp,
@@ -47,13 +54,16 @@ CREATE TABLE IF NOT EXISTS "users" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "users_email_unique" UNIQUE("email")
-);
+  );
+EXCEPTION WHEN duplicate_table THEN NULL; END $$;
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "verification_tokens" (
+DO $$ BEGIN
+  CREATE TABLE IF NOT EXISTS "verification_tokens" (
 	"identifier" text NOT NULL,
 	"token" text NOT NULL,
 	"expires" timestamp NOT NULL
-);
+  );
+EXCEPTION WHEN duplicate_table THEN NULL; END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "accounts" ADD CONSTRAINT "accounts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;

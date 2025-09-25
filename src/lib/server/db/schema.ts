@@ -6,8 +6,13 @@ import {
   varchar,
   boolean,
   serial,
+  customType,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
+// Define pgvector(384) type using Drizzle customType to avoid pgvector import
+const pgVector384 = customType<{ data: number[] }>({
+  dataType: () => "vector(384)",
+});
 
 // Users table - Auth.js compatible
 export const users = pgTable("users", {
@@ -81,6 +86,32 @@ export const chatMessages = pgTable("chat_messages", {
   timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
 
+// RAG Tables for document storage and embeddings
+export const documents = pgTable("documents", {
+  id: varchar("id", { length: 255 }).primaryKey(),
+  title: text("title"),
+  source: text("source"),
+  content: text("content"),
+  mimeType: varchar("mime_type", { length: 100 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const documentChunks = pgTable("document_chunks", {
+  id: varchar("id", { length: 255 }).primaryKey(),
+  documentId: varchar("document_id", { length: 255 }).notNull(),
+  chunkIndex: integer("chunk_index").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const chunkEmbeddings = pgTable("chunk_embeddings", {
+  id: varchar("id", { length: 255 }).primaryKey(),
+  chunkId: varchar("chunk_id", { length: 255 }).notNull(),
+  embedding: pgVector384("embedding").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),
@@ -141,3 +172,23 @@ export const chatMessagesRelations = relations(
     }),
   })
 );
+
+// RAG Relations
+export const documentsRelations = relations(documents, ({ many }) => ({
+  chunks: many(documentChunks),
+}));
+
+export const documentChunksRelations = relations(documentChunks, ({ one, many }) => ({
+  document: one(documents, {
+    fields: [documentChunks.documentId],
+    references: [documents.id],
+  }),
+  embeddings: many(chunkEmbeddings),
+}));
+
+export const chunkEmbeddingsRelations = relations(chunkEmbeddings, ({ one }) => ({
+  chunk: one(documentChunks, {
+    fields: [chunkEmbeddings.chunkId],
+    references: [documentChunks.id],
+  }),
+}));

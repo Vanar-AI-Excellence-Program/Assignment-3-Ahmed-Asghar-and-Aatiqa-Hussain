@@ -4,7 +4,7 @@ import { db } from "$lib/server/db";
 import { chatMessages, chatConversations } from "$lib/server/db/schema";
 import { eq, and, desc, asc, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
-import { generateAIResponse } from "$lib/server/ai";
+import { aiService } from "$lib/server/ai";
 
 export const POST: RequestHandler = async ({ locals, params }) => {
   try {
@@ -32,7 +32,7 @@ export const POST: RequestHandler = async ({ locals, params }) => {
       .where(
         and(
           eq(chatConversations.id, userMessage[0].conversationId),
-          eq(chatConversations.userId, locals.user.id)
+          eq(chatConversations.userId, locals.user.id!)
         )
       )
       .limit(1);
@@ -74,14 +74,19 @@ export const POST: RequestHandler = async ({ locals, params }) => {
       .orderBy(asc(chatMessages.timestamp));
 
     // Generate AI response
-    const aiResponse = await generateAIResponse(
+    const conversationHistory = conversationContext.slice(0, -1).map(msg => ({
+      role: msg.role as "user" | "assistant",
+      content: msg.content
+    }));
+    
+    const aiResponse = await aiService.generateContextualResponse(
       userMessage[0].content,
-      conversationContext.slice(0, -1) // Exclude the current user message from history
+      conversationHistory
     );
 
     // Save new assistant response as a branch/version
     let regeneratedAssistantReply = null;
-    let deactivatedIds = [];
+    let deactivatedIds: string[] = [];
 
     if (existingAssistantMessage.length) {
       // Determine the version group and next version number
@@ -89,7 +94,7 @@ export const POST: RequestHandler = async ({ locals, params }) => {
       const maxVersion = await db
         .select({ v: sql`MAX("version_number")`.as("v") })
         .from(chatMessages)
-        .where(eq(chatMessages.versionGroupId, groupId))
+        .where(eq(chatMessages.versionGroupId, groupId!))
         .then((res) => res[0]?.v || 1);
 
       const nextVersionNumber = Number(maxVersion) + 1;
@@ -98,7 +103,7 @@ export const POST: RequestHandler = async ({ locals, params }) => {
       const groupIdsResult = await db.execute(sql`
         SELECT id FROM chat_messages WHERE "version_group_id" = ${groupId}
       `);
-      const groupIds = groupIdsResult.rows?.map((r) => r.id) || [];
+      const groupIds = groupIdsResult.map((r) => r.id) || [];
 
       if (groupIds.length > 0) {
         const descendantsResult = await db.execute(sql`
@@ -112,7 +117,7 @@ export const POST: RequestHandler = async ({ locals, params }) => {
           )
           SELECT id FROM descendants;
         `);
-        deactivatedIds = descendantsResult.rows?.map((r) => r.id) || [];
+        deactivatedIds = descendantsResult.map((r) => r.id as string) || [];
 
         if (deactivatedIds.length > 0) {
           await db.execute(sql`

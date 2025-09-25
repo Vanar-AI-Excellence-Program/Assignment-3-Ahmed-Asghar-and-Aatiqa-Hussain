@@ -8,7 +8,7 @@ A comprehensive, production-ready authentication application built with cutting-
 - **Authentication**: Auth.js with PostgreSQL Database Sessions (No JWT)
 - **Styling**: TailwindCSS with custom dark theme
 - **Database**: PostgreSQL with Drizzle ORM
-- **AI Integration**: Google Gemini AI with streaming responses
+- **AI Integration**: Google Gemini AI with streaming responses and RAG (Retrieval-Augmented Generation)
 - **Security**: CSRF protection, bcrypt hashing, secure sessions
 - **Deployment**: Docker-ready with comprehensive configuration
 
@@ -31,6 +31,10 @@ A comprehensive, production-ready authentication application built with cutting-
 - **Streaming Responses** - Real-time word-by-word AI response streaming
 - **Model Selection** - Choose between different Gemini AI models
 - **Chat History** - Persistent chat conversations with timestamps
+- **RAG System** - Retrieval-Augmented Generation with document knowledge base
+- **Document Search** - Intelligent search through uploaded documents using vector embeddings
+- **Contextual Responses** - AI answers based on your specific document knowledge
+- **Citations** - Shows which documents were used as sources for responses
 - **Security Guidance** - Expert advice on password security, phishing protection, 2FA, and network security
 - **Interactive Prompts** - Pre-built conversation starters for common security topics
 
@@ -259,8 +263,33 @@ Visit [http://localhost:5173](http://localhost:5173) to see your application!
 3. **Start Conversation** - Use pre-built prompts or ask your own security questions
 4. **Streaming Responses** - Watch AI responses appear word-by-word in real-time
 
+### **🧠 RAG System (Retrieval-Augmented Generation)**
+
+ShieldBot now includes a powerful RAG system that allows the AI to answer questions based on your specific document knowledge base.
+
+#### **How RAG Works:**
+
+1. **Document Ingestion** - Upload documents to create a knowledge base
+2. **Vector Embeddings** - Documents are converted to "memory codes" (384-dimensional vectors)
+3. **Similarity Search** - When you ask questions, the system searches through these "memory codes"
+4. **Contextual Responses** - AI generates answers using the most relevant document information
+5. **Source Citations** - You can see which documents were used as sources
+
+#### **RAG Features:**
+
+- **Document Intelligence** - Upload and process various document formats
+- **Vector Search** - Advanced similarity search through document embeddings
+- **Contextual Understanding** - AI responses tailored to your specific content
+- **Source Transparency** - Clear display of which documents informed responses
+- **Real-time Processing** - Instant document search and response generation
+
 ### **AI Capabilities**
 
+- **RAG-Powered Responses** - Answers based on your document knowledge base
+- **Document Intelligence** - Search and reference your uploaded documents
+- **Vector Search** - Advanced similarity search through document embeddings
+- **Contextual Understanding** - AI responses tailored to your specific content
+- **Source Citations** - Transparent display of which documents informed responses
 - **Password Security** - Best practices for strong passwords
 - **Phishing Protection** - How to identify and avoid phishing scams
 - **Two-Factor Authentication** - Benefits and setup guidance
@@ -499,6 +528,17 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **ShieldAuth** - Built with ❤️ using modern web technologies for secure, scalable authentication with intelligent AI assistance.
 
 ## 🔮 Recent Updates
+
+### **v3.0 - RAG System Integration**
+
+- ✅ **RAG System** - Retrieval-Augmented Generation with document knowledge base
+- ✅ **Vector Embeddings** - Document content converted to searchable vector embeddings
+- ✅ **Similarity Search** - Intelligent search through document "memory codes"
+- ✅ **Contextual Responses** - AI answers based on your specific document knowledge
+- ✅ **Source Citations** - Transparent display of which documents informed responses
+- ✅ **Document Intelligence** - Advanced document search and reference capabilities
+- ✅ **Embedding Service** - Dedicated service for generating document embeddings
+- ✅ **Vector Database** - PostgreSQL with pgvector extension for similarity search
 
 ### **v2.0 - ShieldBot AI Integration**
 

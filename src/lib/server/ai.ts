@@ -1,6 +1,6 @@
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { generateText, streamText } from "ai";
-import { env } from "$env/dynamic/private";
+import { similaritySearch, buildContextFromChunks } from "$lib/server/rag";
 
 /**
  * AI Service for ShieldBot
@@ -14,15 +14,21 @@ export class AIService {
   constructor() {
     // Try multiple possible environment variable names
     this.apiKey =
-      env.GOOGLE_GENERATIVE_AI_API_KEY ||
-      env.GEMINI_API_KEY ||
-      env.VERCEL_AI_API_KEY;
+      (process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
+      process.env.GEMINI_API_KEY ||
+      process.env.VERCEL_AI_API_KEY) ?? null;
     if (this.apiKey) {
       this.google = createGoogleGenerativeAI({ apiKey: this.apiKey });
     }
   }
 
   private ensureInitialized() {
+    console.log("AI Service Debug:", {
+      hasApiKey: !!this.apiKey,
+      hasGoogle: !!this.google,
+      keyLength: this.apiKey?.length || 0
+    });
+    
     if (!this.apiKey || !this.google) {
       throw new Error(
         "Missing Gemini API key. Please add GOOGLE_GENERATIVE_AI_API_KEY, GEMINI_API_KEY, or VERCEL_AI_API_KEY to your .env file."
@@ -122,6 +128,18 @@ Always respond as ShieldBot, maintaining your friendly and helpful personality. 
   ): Promise<string> {
     this.ensureInitialized();
     try {
+      // Retrieve relevant chunks via RAG
+      const ragResults = await similaritySearch(prompt, 5);
+      const bestScore = Number(ragResults[0]?.score ?? 0);
+      const useRag = ragResults.length > 0 && bestScore >= 0.55;
+      console.log("[RAG] decision", { results: ragResults.length, bestScore, useRag });
+
+      const ragContext = useRag
+        ? buildContextFromChunks(ragResults.map((r) => ({ content: r.content })))
+        : null;
+      const augmented = useRag
+        ? `Use the context if relevant. If not, answer normally.\n---\n${ragContext}\n---\nUser: ${prompt}`
+        : prompt;
       // Format conversation history for Vercel AI SDK
       const messages = conversationHistory
         .filter((msg) => msg.role !== "assistant" || msg.content.trim())
@@ -129,6 +147,8 @@ Always respond as ShieldBot, maintaining your friendly and helpful personality. 
           role: msg.role as "user" | "assistant",
           content: msg.content,
         }));
+      // Append the current user input (augmented when RAG active)
+      messages.push({ role: "user", content: augmented });
 
       const { text } = await generateText({
         model: this.google!(model),

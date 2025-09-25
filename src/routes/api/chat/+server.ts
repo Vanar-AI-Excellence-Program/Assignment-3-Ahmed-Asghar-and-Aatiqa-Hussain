@@ -1,12 +1,12 @@
 import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 import { aiService } from "$lib/server/ai";
-import { auth } from "$lib/server/auth";
+import { similaritySearch, buildContextFromChunks } from "$lib/server/rag";
 
 export const POST: RequestHandler = async ({ request, locals }) => {
   try {
     // Check authentication
-    if (!locals.auth?.user?.id) {
+    if (!locals.user?.id) {
       return json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -31,11 +31,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     // Extract user name for personalization
     let userName = "User";
 
-    if (locals.auth.user.name && locals.auth.user.name !== "The Shield") {
-      userName = locals.auth.user.name;
-    } else if (locals.auth.user.email) {
+    if (locals.user && locals.user.name && locals.user.name !== "The Shield") {
+      userName = locals.user.name;
+    } else if (locals.user && locals.user.email) {
       // Try to extract a better name from email
-      const emailPrefix = locals.auth.user.email.split("@")[0];
+      const emailPrefix = locals.user.email.split("@")[0];
       // For now, let's use a more friendly approach - try to make it look like a name
       if (emailPrefix === "shieldauthsec") {
         userName = "Shield"; // Use "Shield" as a friendly name
@@ -60,21 +60,51 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     }
 
     console.log("User data for AI:", {
-      name: locals.auth.user.name,
-      email: locals.auth.user.email,
+      name: locals.user?.name,
+      email: locals.user?.email,
       extractedName: userName,
     });
 
-    // Generate AI response with context
+    // Retrieve top-k relevant chunks and prepend as system context (best-effort)
+    let contextualHistory = conversationHistory as Array<{ role: "user" | "assistant"; content: string }>;
+    let citations: Array<{ documentTitle?: string; documentSource?: string; score: number }> = [];
+    
+    try {
+      const results = await similaritySearch(message, 5);
+      citations = results.map(r => ({
+        documentTitle: r.documentTitle,
+        documentSource: r.documentSource,
+        score: r.score
+      }));
+      
+      const context = buildContextFromChunks(results.map((r) => ({ content: r.content })));
+      if (context) {
+        contextualHistory = [
+          { role: "assistant" as const, content: `You are provided with the following context from the knowledge base. Use it to answer accurately. If the context is insufficient, say so.\n\n[CONTEXT]\n${context}` },
+          ...conversationHistory,
+        ];
+      }
+    } catch (e) {
+      console.warn("RAG retrieval failed; continuing without context:", e);
+    }
+
+    console.log("Generating AI response with context:", {
+      messageLength: message.length,
+      contextLength: contextualHistory.length,
+      hasContext: contextualHistory[0]?.content?.includes('[CONTEXT]'),
+      citationsCount: citations.length
+    });
+
     const response = await aiService.generateContextualResponse(
       message,
-      conversationHistory,
+      contextualHistory,
       userName,
       model
     );
 
     return json({
       response,
+      citations,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

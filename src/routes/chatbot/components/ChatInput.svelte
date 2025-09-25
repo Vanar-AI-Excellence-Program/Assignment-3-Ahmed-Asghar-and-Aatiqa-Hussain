@@ -3,6 +3,23 @@
 	export let isTyping: boolean = false;
 
 	let message = '';
+	let fileInput: HTMLInputElement | null = null;
+
+	async function uploadFile(file: File) {
+		const form = new FormData();
+		form.append('file', file);
+		try {
+			const res = await fetch('/api/rag/ingest', { method: 'POST', body: form });
+			if (!res.ok) {
+				console.error('Upload failed');
+				return;
+			}
+			const data = await res.json();
+			console.log('Ingested:', data);
+		} catch (e) {
+			console.error('Upload error', e);
+		}
+	}
 
 	const handleSubmit = (e: Event) => {
 		e.preventDefault();
@@ -26,10 +43,12 @@
 	<div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-blue-500/5 to-transparent rounded-full blur-xl"></div>
 	<div class="absolute bottom-0 left-0 w-16 h-16 bg-gradient-to-tr from-purple-500/5 to-transparent rounded-full blur-lg"></div>
 	<form on:submit={handleSubmit} class="relative z-10 flex gap-3 items-center max-w-4xl mx-auto">
+		<input bind:this={fileInput} type="file" class="hidden" accept=".txt,.md,.pdf,.doc,.docx" on:change={(e:any)=>{const f=e.currentTarget?.files?.[0]; if(f) uploadFile(f); e.currentTarget.value='';}} />
 		<button
 			type="button"
 			class="group text-gray-400 hover:text-white hover:bg-gradient-to-br hover:from-gray-700/60 hover:to-gray-800/70 shrink-0 flex items-center justify-center h-12 w-12 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-gray-500/10 transform hover:-translate-y-0.5"
 			aria-label="Attach file"
+			on:click={() => fileInput?.click()}
 		>
 			<svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />

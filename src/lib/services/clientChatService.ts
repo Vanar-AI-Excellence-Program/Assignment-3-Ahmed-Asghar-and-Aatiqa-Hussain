@@ -12,6 +12,7 @@ export interface ChatMessage {
 
 export interface ChatResponse {
   response: string;
+  citations?: Array<{ documentTitle?: string; documentSource?: string; score: number }>;
   timestamp: string;
 }
 
@@ -71,6 +72,7 @@ export class ClientChatService {
     content?: string;
     error?: string;
     details?: string;
+    citations?: Array<{ documentTitle?: string; documentSource?: string; score: number }>;
   }> {
     try {
       const response = await fetch("/api/chat/stream", {
@@ -146,8 +148,11 @@ export class ClientChatService {
                     }
                   }
                 } else if (data.type === "complete") {
-                  // Send completion signal
-                  yield data;
+                  // Send completion signal with citations
+                  yield {
+                    type: "complete",
+                    citations: data.citations
+                  };
                 } else if (data.type === "error") {
                   yield data;
                 }

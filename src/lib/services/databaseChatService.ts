@@ -24,6 +24,7 @@ export interface ChatMessage {
   versionNumber?: number;
   isEdited?: boolean;
   isActive?: boolean;
+  citations?: Array<{ documentTitle?: string; documentSource?: string; score: number }>;
 }
 
 export interface CreateConversationRequest {

@@ -1,0 +1,31 @@
+History of Artificial Intelligence
+
+Artificial Intelligence (AI) has gone through several distinct phases since its origins.
+
+1. Early Beginnings (1940s–1950s)
+The concept of machines that could "think" dates back centuries, but the formal field began in the 1940s and 1950s.
+Alan Turing introduced the idea of a "universal machine" and later proposed the Turing Test as a measure of intelligence.
+
+2. The Birth of AI (1956)
+The Dartmouth Conference in 1956 is widely considered the founding moment of AI as a field. Researchers like John McCarthy,
+Marvin Minsky, Claude Shannon, and others gathered to discuss how to make machines learn and reason.
+
+3. Early Progress and Setbacks (1960s–1970s)
+During this time, symbolic AI dominated, with attempts to encode human knowledge into rules and logic systems.
+However, computing power and data were limited, leading to the first "AI Winter."
+
+4. Rise of Machine Learning (1980s–1990s)
+As computing power increased, researchers shifted focus to algorithms that could learn patterns from data rather than rely
+only on hand-crafted rules. Neural networks gained traction, though they were still shallow by modern standards.
+
+5. The Deep Learning Revolution (2010s–Present)
+The availability of big data, GPUs, and better algorithms caused a boom in AI progress. Deep neural networks achieved
+state-of-the-art results in image recognition, language processing, and many other areas.
+
+Key Milestones:
+- IBM's Deep Blue defeated Garry Kasparov in chess (1997).
+- IBM Watson won Jeopardy! against human champions (2011).
+- Google DeepMind's AlphaGo defeated Lee Sedol in Go (2016).
+
+Special Fact for Testing:
+The secret code phrase hidden in this document is: "Green Elephants Dance in Paris."

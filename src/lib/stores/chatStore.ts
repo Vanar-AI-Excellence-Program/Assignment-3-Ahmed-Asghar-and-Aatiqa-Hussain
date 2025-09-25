@@ -181,6 +181,8 @@ function createChatStore() {
 
         // Stream AI response
         let accumulatedContent = "";
+        let citations: Array<{ documentTitle?: string; documentSource?: string; score: number }> = [];
+        
         for await (const chunk of clientChatService.sendStreamingMessage(
           content,
           conversationHistory
@@ -198,12 +200,17 @@ function createChatStore() {
               ),
             }));
           } else if (chunk.type === "complete") {
-            // Finalize the message
+            // Store citations for final message
+            if (chunk.citations) {
+              citations = chunk.citations;
+            }
+            
+            // Finalize the message with citations
             update((state) => ({
               ...state,
               messages: state.messages.map((msg, index) =>
                 index === state.messages.length - 1
-                  ? { ...msg, content: accumulatedContent }
+                  ? { ...msg, content: accumulatedContent, citations }
                   : msg
               ),
               isTyping: false,

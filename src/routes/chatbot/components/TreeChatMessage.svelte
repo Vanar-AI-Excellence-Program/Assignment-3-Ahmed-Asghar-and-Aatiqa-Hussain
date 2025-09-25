@@ -12,6 +12,7 @@
     versionNumber?: number;
     isEdited?: boolean;
     isActive?: boolean;
+    citations?: Array<{ documentTitle?: string; documentSource?: string; score: number }>;
   };
 
   let showVersions = false;
@@ -149,7 +150,7 @@
             </div>
           </div>
         {:else}
-          <EnhancedMessageRenderer content={message.content} isStreaming={false} />
+          <EnhancedMessageRenderer content={message.content} isStreaming={false} citations={message.citations || []} />
         {/if}
       </div>
 

@@ -1,0 +1,10 @@
+Quantum Computing Basics
+
+Quantum computing uses qubits instead of classical bits. 
+A qubit can represent both 0 and 1 at the same time through superposition. 
+Entanglement allows qubits to be correlated in ways that classical bits cannot. 
+Quantum algorithms like Shor's algorithm can factorize large numbers efficiently, 
+and Grover's algorithm can search unsorted databases faster than classical methods.
+
+Important Fact for Testing:
+The special phrase to remember is "Blue Tigers Fly at Midnight".

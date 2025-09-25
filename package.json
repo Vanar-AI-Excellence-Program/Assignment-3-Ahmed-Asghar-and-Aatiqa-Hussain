@@ -49,12 +49,17 @@
     "@auth/sveltekit": "^1.10.0",
     "@google/generative-ai": "^0.24.1",
     "@sendgrid/mail": "^8.1.5",
+    "@vercel/postgres": "^0.10.0",
     "ai": "^3.4.32",
     "bcryptjs": "^3.0.2",
     "dotenv": "^16.3.1",
     "drizzle-orm": "^0.40.0",
+    "marked": "^16.3.0",
     "nanoid": "^5.0.0",
-    "postgres": "^3.4.5"
+    "pg": "^8.16.3",
+    "pgvector": "^0.2.1",
+    "postgres": "^3.4.5",
+    "shiki": "^3.13.0"
   },
   "type": "module"
 }

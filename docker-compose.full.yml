@@ -3,13 +3,13 @@ version: "3.8"
 services:
   # PostgreSQL Database
   postgres:
-    image: postgres:15-alpine
+    image: pgvector/pgvector:pg16
     container_name: shieldauth_postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: Authapp
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ahmed123
+      POSTGRES_PASSWORD: aatiqa123
       POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
     ports:
       - "5433:5432"
@@ -22,6 +22,20 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - shieldauth_network
+
+  # Embedding Service
+  embedding-service:
+    build:
+      context: ./embedding-service
+      dockerfile: Dockerfile
+    container_name: shieldauth_embedding
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      - MODEL_NAME=sentence-transformers/all-MiniLM-L6-v2
     networks:
       - shieldauth_network
 
@@ -38,9 +52,15 @@ services:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://postgres:ahmed123@postgres:5432/Authapp
       - AUTH_SECRET=${AUTH_SECRET}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GOOGLE_GENERATIVE_AI_API_KEY=${GOOGLE_GENERATIVE_AI_API_KEY:-${GEMINI_API_KEY}}
+      - VERCEL_AI_API_KEY=${VERCEL_AI_API_KEY:-}
+      - EMBEDDING_API_URL=http://embedding-service:8001
     depends_on:
       postgres:
         condition: service_healthy
+      embedding-service:
+        condition: service_started
     networks:
       - shieldauth_network
     volumes:
@@ -64,6 +84,7 @@ services:
         condition: service_healthy
     networks:
       - shieldauth_network
+
 
 volumes:
   postgres_data:
