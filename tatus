@@ -1,0 +1,246 @@
+[1mdiff --git a/chmjunaid-and-muzamil-task-3-main/.gitignore b/chmjunaid-and-muzamil-task-3-main/.gitignore[m
+[1mdeleted file mode 100644[m
+[1mindex c6d96e1..0000000[m
+[1m--- a/chmjunaid-and-muzamil-task-3-main/.gitignore[m
+[1m+++ /dev/null[m
+[36m@@ -1,30 +0,0 @@[m
+[31m-# dependencies[m
+[31m-node_modules/[m
+[31m-[m
+[31m-# dotenv environment variables[m
+[31m-.env[m
+[31m-.env.*[m
+[31m-[m
+[31m-# build output[m
+[31m-.svelte-kit/[m
+[31m-build/[m
+[31m-dist/[m
+[31m-[m
+[31m-# logs[m
+[31m-npm-debug.log*[m
+[31m-yarn-debug.log*[m
+[31m-yarn-error.log*[m
+[31m-pnpm-debug.log*[m
+[31m-[m
+[31m-# OS files[m
+[31m-.DS_Store[m
+[31m-Thumbs.db[m
+[31m-[m
+[31m-# IDE/editor files[m
+[31m-.vscode/[m
+[31m-.idea/[m
+[31m-*.swp[m
+[31m-*.swo[m
+[31m-[m
+[31m-# Drizzle ORM output[m
+[31m-/drizzle/[m
+[1mdiff --git a/chmjunaid-and-muzamil-task-3-main/.npmrc b/chmjunaid-and-muzamil-task-3-main/.npmrc[m
+[1mdeleted file mode 100644[m
+[1mindex b6f27f1..0000000[m
+[1m--- a/chmjunaid-and-muzamil-task-3-main/.npmrc[m
+[1m+++ /dev/null[m
+[36m@@ -1 +0,0 @@[m
+[31m-engine-strict=true[m
+[1mdiff --git a/chmjunaid-and-muzamil-task-3-main/README.md b/chmjunaid-and-muzamil-task-3-main/README.md[m
+[1mdeleted file mode 100644[m
+[1mindex 5d49b9c..0000000[m
+[1m--- a/chmjunaid-and-muzamil-task-3-main/README.md[m
+[1m+++ /dev/null[m
+[36m@@ -1,181 +0,0 @@[m
+[31m-# AI Chat Application with Semantic Search[m
+[31m-[m
+[31m-## Overview[m
+[31m-A modern SvelteKit application featuring AI-powered chat functionality with semantic search capabilities, user authentication, and document processing.[m
+[31m-[m
+[31m-## Features[m
+[31m-[m
+[31m-### 🔐 Authentication System[m
+[31m-- User registration and login[m
+[31m-- Email verification[m
+[31m-- Password reset functionality[m
+[31m-- Session management[m
+[31m-[m
+[31m-### 💬 AI Chat System[m
+[31m-- Real-time chat with AI[m
+[31m-- Context-aware responses[m
+[31m-- Message history and conversations[m
+[31m-- Document upload and processing[m
+[31m-[m
+[31m-### 🔍 Semantic Search[m
+[31m-- AI-powered semantic search across conversations[m
+[31m-- Context-aware responses using similar content[m
+[31m-- Integration with Google's Gemini AI[m
+[31m-[m
+[31m-### 📊 Dashboard[m
+[31m-- User dashboard with chat history[m
+[31m-- Admin dashboard for user management[m
+[31m-- Analytics and user activity tracking[m
+[31m-[m
+[31m-### 📄 Document Processing[m
+[31m-- Support for PDF and TXT file uploads[m
+[31m-- Text extraction and embedding generation[m
+[31m-- RAG (Retrieval-Augmented Generation) capabilities[m
+[31m-[m
+[31m-## Tech Stack[m
+[31m-[m
+[31m-- **Frontend**: SvelteKit 5, TailwindCSS[m
+[31m-- **Backend**: Node.js with SvelteKit API routes[m
+[31m-- **Database**: PostgreSQL with pgvector extension[m
+[31m-- **AI**: Google Gemini AI, Semantic embeddings[m
+[31m-- **Authentication**: Auth.js (NextAuth)[m
+[31m-- **Styling**: TailwindCSS, Radix UI components[m
+[31m-[m
+[31m-## Project Structure[m
+[31m-```[m
+[31m-├── src/[m
+[31m-│   ├── lib/[m
+[31m-│   │   ├── components/       # UI components[m
+[31m-│   │   ├── auth.js          # Authentication utilities[m
+[31m-│   │   ├── db.js            # Database configuration[m
+[31m-│   │   ├── embedding.js     # AI embedding service[m
+[31m-│   │   └── services/        # Business logic services[m
+[31m-│   ├── routes/              # Application routes and API endpoints[m
+[31m-│   └── app.html             # Main HTML template[m
+[31m-├── embedding-service/        # FastAPI Python service for AI embeddings[m
+[31m-├── static/                   # Static assets and CSS[m
+[31m-├── docker-compose.yml        # Database and embedding service setup[m
+[31m-└── drizzle.config.ts         # Database schema configuration[m
+[31m-```[m
+[31m-[m
+[31m-## Getting Started[m
+[31m-[m
+[31m-### Prerequisites[m
+[31m-- Node.js 18+ and pnpm[m
+[31m-- Docker and Docker Compose[m
+[31m-- Google Gemini API key[m
+[31m-[m
+[31m-### Installation[m
+[31m-[m
+[31m-1. **Clone the repository**[m
+[31m-```bash[m
+[31m-git clone <repository-url>[m
+[31m-cd chmjunaid-and-muzamil-task-3[m
+[31m-```[m
+[31m-[m
+[31m-2. **Install dependencies**[m
+[31m-```bash[m
+[31m-pnpm install[m
+[31m-```[m
+[31m-[m
+[31m-3. **Environment setup**[m
+[31m-```bash[m
+[31m-cp env.example .env[m
+[31m-# Edit .env with your configuration[m
+[31m-```[m
+[31m-[m
+[31m-4. **Start all services (database and embedding service)**[m
+[31m-```bash[m
+[31m-pnpm run start:services[m
+[31m-```[m
+[31m-[m
+[31m-5. **Enable pgvector extension**[m
+[31m-```bash[m
+[31m-pnpm run enable:pgvector[m
+[31m-```[m
+[31m-[m
+[31m-6. **Initialize database schema**[m
+[31m-```bash[m
+[31m-pnpm run db:push[m
+[31m-```[m
+[31m-[m
+[31m-7. **Start development server**[m
+[31m-```bash[m
+[31m-pnpm run dev[m
+[31m-```[m
+[31m-[m
+[31m-## Available Scripts[m
+[31m-[m
+[31m-- `pnpm dev` - Start development server[m
+[31m-- `pnpm build` - Build for production[m
+[31m-- `pnpm preview` - Preview production build[m
+[31m-- `pnpm start:services` - Start all Docker services (database and embedding service)[m
+[31m-- `pnpm db:stop` - Stop database services[m
+[31m-- `pnpm db:push` - Push database schema changes[m
+[31m-- `pnpm db:studio` - Open Drizzle Studio for database management[m
+[31m-[m
+[31m-## Environment Variables[m
+[31m-[m
+[31m-Create a `.env` file based on `env.example`:[m
+[31m-[m
+[31m-```env[m
+[31m-# Database[m
+[31m-DATABASE_URL=postgresql://postgres:postgres@localhost:5434/mydatabase[m
+[31m-[m
+[31m-# Authentication[m
+[31m-AUTH_SECRET=your-secret-key[m
+[31m-GOOGLE_CLIENT_ID=your-google-client-id[m
+[31m-GOOGLE_CLIENT_SECRET=your-google-client-secret[m
+[31m-[m
+[31m-# AI Services[m
+[31m-GEMINI_API_KEY=your-gemini-api-key[m
+[31m-EMBEDDING_SERVICE_URL=http://localhost:8000[m
+[31m-[m
+[31m-# Email (optional)[m
+[31m-EMAIL_SERVER_HOST=smtp.gmail.com[m
+[31m-EMAIL_SERVER_PORT=587[m
+[31m-EMAIL_SERVER_USER=your-email@gmail.com[m
+[31m-EMAIL_SERVER_PASSWORD=your-app-password[m
+[31m-```[m
+[31m-[m
+[31m-## AI Embedding Service[m
+[31m-[m
+[31m-The application includes a FastAPI-based embedding service that provides:[m
+[31m-[m
+[31m-- **Text Embeddings**: Convert text to vector representations[m
+[31m-- **Semantic Search**: Find similar content across conversations[m
+[31m-- **Document Processing**: Extract text from PDF and TXT files[m
+[31m-- **RAG Integration**: Context-aware AI responses[m
+[31m-[m
+[31m-### Running the Embedding Service[m
+[31m-[m
+[31m-```bash[m
+[31m-cd embedding-service[m
+[31m-pip install -r requirements.txt[m
+[31m-python app.py[m
+[31m-```[m
+[31m-[m
+[31m-Or use Docker:[m
+[31m-```bash[m
+[31m-docker-compose up -d embedding-service[m
+[31m-```[m
+[31m-[m
+[31m-## Database[m
+[31m-[m
+[31m-The application uses PostgreSQL with the pgvector extension for storing and querying embeddings:[m
+[31m-[m
+[31m-```bash[m
+[31m-# Enable pgvector extension (first time setup)[m
+[31m-pnpm run enable:pgvector[m
+[31m-```[m
+[31m-[m
+[31m-## Contributing[m
+[31m-[m
+[31m-1. Fork the repository[m
+[31m-2. Create a feature branch[m
+[31m-3. Make your changes[m
+[31m-4. Submit a pull request[m
+[31m-[m
+[31m-## License[m
+[31m-[m
+[31m-This project is licensed under the MIT License.[m
+[1mdiff --git a/chmjunaid-and-muzamil-task-3-main/docker-compose.yml b/chmjunaid-and-muzamil-task-3-main/docker-compose.yml[m
+[1mdeleted file mode 100644[m
+[1mindex e6dfee7..0000000[m
+[1m--- a/chmjunaid-and-muzamil-task-3-main/docker-compose.yml[m
+[1m+++ /dev/null[m
+[36m@@ -1,29 +0,0 @@[m
+[31m-services:[m
+[31m-  postgres:[m
+[31m-    image: pgvector/pgvector:pg15[m
+[31m-    container_name: postgres_db[m
+[31m-    environment:[m
+[31m-      POSTGRES_DB: mydatabase[m
+[31m-      POSTGRES_USER: postgres[m
+[31m-      POSTGRES_PASSWORD: postgres[m
+[31m-    ports:[m
+[31m-      - "5
