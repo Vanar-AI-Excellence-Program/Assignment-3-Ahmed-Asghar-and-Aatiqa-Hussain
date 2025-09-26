@@ -1,30 +1,44 @@
-# ShieldAuth - Modern Secure Authentication System with AI Assistant
+# ShieldAuth - Modern Secure Authentication System with Advanced AI Assistant
 
-A comprehensive, production-ready authentication application built with cutting-edge web technologies. ShieldAuth provides secure user authentication, role-based access control, a beautiful modern interface with advanced admin capabilities, and an integrated AI chatbot assistant for cybersecurity guidance.
+A comprehensive, production-ready authentication application built with cutting-edge web technologies. ShieldAuth provides secure user authentication, role-based access control, a beautiful modern interface with advanced admin capabilities, and an integrated AI chatbot assistant with **RAG (Retrieval Augmented Generation)** capabilities for enhanced cybersecurity guidance.
 
 ## 🚀 Technology Stack
 
 - **Frontend**: SvelteKit with Svelte 5
 - **Authentication**: Auth.js with PostgreSQL Database Sessions (No JWT)
 - **Styling**: TailwindCSS with custom dark theme
-- **Database**: PostgreSQL with Drizzle ORM
-- **AI Integration**: Google Gemini AI with streaming responses
+- **Database**: PostgreSQL with pgvector extension for vector embeddings
+- **AI Integration**: Google Gemini AI with streaming responses and RAG
+- **Vector Database**: pgvector for semantic search and embeddings
+- **Embedding Service**: Python FastAPI microservice with Gemini Embeddings API
 - **Security**: CSRF protection, bcrypt hashing, secure sessions
 - **Deployment**: Docker-ready with comprehensive configuration
 
 ## ✨ Core Features
 
-### 🤖 **ShieldBot AI Assistant**
+### 🤖 **ShieldBot AI Assistant with RAG**
 
 #### **Intelligent Chat Interface**
 
 - **Real-time AI Chat** - Interactive conversation with ShieldBot AI assistant
 - **Word-by-Word Streaming** - Natural typing effect with streaming responses
-- **Cybersecurity Focus** - Specialized in authentication, security, and digital safety
+- **Context-Aware Responses** - AI responses enhanced with retrieved document context
+- **Citation Display** - Shows which documents informed the AI's answer
+- **File Upload Support** - Upload documents (.txt, .doc, .docx, .pdf) for AI analysis
 - **Multiple AI Models** - Support for Gemini 2.5 Pro, 2.5 Flash, 1.5 Pro, and 1.5 Flash
 - **Chat Management** - Create, rename, delete, and organize chat conversations
 - **Auto-Rename** - Automatic chat naming based on first message topic
 - **Responsive Design** - Full-screen chat interface with collapsible sidebar
+
+#### **RAG (Retrieval Augmented Generation) Features**
+
+- **Document Ingestion** - Upload and process documents for AI context
+- **Semantic Search** - Vector-based similarity search for relevant content
+- **Context Retrieval** - Automatic retrieval of relevant document snippets
+- **Citation System** - Track and display source documents with relevance scores
+- **Chunking Strategy** - Intelligent document chunking for optimal context
+- **Embedding Generation** - Automatic vector embeddings using Gemini API
+- **Vector Storage** - pgvector database for efficient similarity search
 
 #### **AI Features**
 
@@ -33,6 +47,8 @@ A comprehensive, production-ready authentication application built with cutting-
 - **Chat History** - Persistent chat conversations with timestamps
 - **Security Guidance** - Expert advice on password security, phishing protection, 2FA, and network security
 - **Interactive Prompts** - Pre-built conversation starters for common security topics
+- **Markdown Rendering** - Rich text formatting with syntax highlighting
+- **Code Highlighting** - Syntax highlighting for code blocks using Shiki
 
 #### **Advanced Message Management**
 
@@ -114,6 +130,8 @@ A comprehensive, production-ready authentication application built with cutting-
 - **Streaming Responses** - Word-by-word AI response streaming for natural conversation
 - **Chat Prompts** - Pre-built conversation starters for security topics
 - **Auto-Rename** - Intelligent chat naming based on conversation topics
+- **File Upload** - Drag-and-drop file upload with validation
+- **Citation Display** - Show source documents with relevance scores
 
 #### **Enhanced Chat Management**
 
@@ -161,6 +179,9 @@ AUTH_SECRET="your-super-secret-auth-key-here"
 # AI Configuration (Required for ShieldBot)
 GOOGLE_AI_API_KEY="your-google-ai-api-key"
 
+# Embedding Service Configuration (Required for RAG)
+EMBEDDING_API_URL="http://localhost:8000"
+
 # OAuth Configuration (Optional)
 GOOGLE_CLIENT_ID="your-google-client-id"
 GOOGLE_CLIENT_SECRET="your-google-client-secret"
@@ -173,10 +194,11 @@ NODE_ENV="development"
 
 **Important Notes:**
 
-- Uses **PostgreSQL only** - no SQLite fallback
+- Uses **PostgreSQL with pgvector** - no SQLite fallback
 - Custom port `5433` to avoid conflicts
 - Generate secure AUTH_SECRET: `openssl rand -base64 32`
 - **Google AI API Key required** for ShieldBot functionality
+- **Embedding API URL** required for RAG functionality
 - OAuth credentials are optional
 
 ## 🏗️ Project Structure
@@ -189,25 +211,38 @@ src/
 │   │   ├── Card.svelte
 │   │   ├── Input.svelte
 │   │   ├── Notification.svelte
-│   │   └── EnhancedMessageRenderer.svelte
+│   │   ├── EnhancedMessageRenderer.svelte
+│   │   └── MarkdownRenderer.svelte    # Markdown with syntax highlighting
 │   ├── server/              # Server-side utilities
 │   │   ├── auth.ts          # Auth.js configuration
 │   │   ├── ai.ts            # AI service integration
 │   │   ├── db/              # Database schema and connection
+│   │   │   ├── schema.ts    # Main database schema
+│   │   │   └── rag.schema.ts # RAG-specific tables
 │   │   ├── email.ts         # Email service
 │   │   └── security.ts      # Security utilities
 │   ├── services/            # Client-side services
-│   │   └── clientChatService.ts  # AI chat service
+│   │   ├── clientChatService.ts  # AI chat service
+│   │   └── databaseChatService.ts # Database chat operations
 │   └── stores/              # Svelte stores
+│       └── chatStore.ts     # Chat state management
 ├── routes/                  # Application routes
 │   ├── api/                 # API endpoints
 │   │   ├── auth/            # Authentication endpoints
-│   │   └── chat/            # AI chat streaming endpoints
+│   │   ├── chat/            # AI chat streaming endpoints
+│   │   └── rag/             # RAG endpoints
+│   │       ├── ingest/      # Document ingestion
+│   │       └── retrieve/    # Context retrieval
 │   ├── admin/               # Admin-only pages
 │   ├── auth/                # Authentication pages
 │   ├── chatbot/             # ShieldBot AI chat interface
 │   └── (pages)/             # Public and protected pages
 └── static/                  # Static assets
+
+embedding-service/           # Python microservice
+├── app.py                   # FastAPI embedding service
+├── Dockerfile              # Container configuration
+└── requirements.txt        # Python dependencies
 ```
 
 ## 🚀 Quick Start
@@ -215,16 +250,16 @@ src/
 ### 1. **Clone and Install**
 
 ```bash
-git clone https://github.com/muhammad-ahmed4/ShieldBot-Assignment2-Ahmed-Asghar
-cd ShieldBot-Assignment2-Ahmed-Asghar
+git clone https://github.com/Vanar-AI-Excellence-Program/Assignment-3-Ahmed-Asghar-and-Aatiqa-Hussain
+cd Assignment-3-Ahmed-Asghar-and-Aatiqa-Hussain
 npm install
 ```
 
 ### 2. **Database Setup**
 
 ```bash
-# Start PostgreSQL (custom port 5433)
-npm run db:up
+# Start PostgreSQL with pgvector (custom port 5433)
+docker-compose up -d
 
 # Push database schema
 npm run db:push
@@ -251,6 +286,9 @@ GITHUB_CLIENT_SECRET="your-github-client-secret"
 # AI Configuration (Required for ShieldBot)
 GOOGLE_AI_API_KEY="your-google-ai-api-key"
 
+# Embedding Service Configuration (Required for RAG)
+EMBEDDING_API_URL="http://localhost:8000"
+
 # Email Configuration (Optional - for email verification and password reset)
 SENDGRID_API_KEY="your-sendgrid-api-key"
 FROM_EMAIL="noreply@yourdomain.com"
@@ -259,11 +297,15 @@ FROM_EMAIL="noreply@yourdomain.com"
 NODE_ENV="development"
 ```
 
-**Important**: The `GOOGLE_AI_API_KEY` is required for ShieldBot functionality.
+**Important**: Both `GOOGLE_AI_API_KEY` and `EMBEDDING_API_URL` are required for full ShieldBot functionality.
 
 ### 4. **Start Development**
 
 ```bash
+# Start the embedding service
+docker-compose up embedding-service -d
+
+# Start the main application
 npm run dev
 ```
 
@@ -276,7 +318,17 @@ Visit [http://localhost:5173](http://localhost:5173) to see your application!
 1. **Navigate to Chatbot** - Click "Start Chat" on the homepage or visit `/chatbot`
 2. **Choose AI Model** - Select from Gemini 2.5 Pro, 2.5 Flash, 1.5 Pro, or 1.5 Flash
 3. **Start Conversation** - Use pre-built prompts or ask your own security questions
-4. **Streaming Responses** - Watch AI responses appear word-by-word in real-time
+4. **Upload Documents** - Upload files for AI to analyze and reference
+5. **Streaming Responses** - Watch AI responses appear word-by-word in real-time
+6. **View Citations** - See which documents informed the AI's answer
+
+### **RAG Capabilities**
+
+- **Document Analysis** - Upload and analyze security documents, policies, and guides
+- **Context-Aware Responses** - AI responses enhanced with relevant document content
+- **Citation Tracking** - See exactly which documents and sections informed each answer
+- **Semantic Search** - Find relevant content using vector similarity
+- **Multi-Format Support** - Support for .txt, .doc, .docx, and .pdf files
 
 ### **AI Capabilities**
 
@@ -285,6 +337,7 @@ Visit [http://localhost:5173](http://localhost:5173) to see your application!
 - **Two-Factor Authentication** - Benefits and setup guidance
 - **Network Security** - Securing home Wi-Fi and devices
 - **General Cybersecurity** - Comprehensive security advice
+- **Document-Specific Guidance** - AI responses based on uploaded documents
 
 ### **Chat Management**
 
@@ -293,6 +346,7 @@ Visit [http://localhost:5173](http://localhost:5173) to see your application!
 - **Chat History** - Persistent conversation storage
 - **Delete Chats** - Remove unwanted conversations
 - **New Chat** - Start fresh conversations anytime
+- **File Attachments** - Upload and reference documents in conversations
 
 ## 👑 Admin Features
 
@@ -338,7 +392,7 @@ npm run promote-admin your-email@example.com
 
 ### **AI Chat Routes**
 
-- `/chatbot` - ShieldBot AI chat interface with streaming responses
+- `/chatbot` - ShieldBot AI chat interface with streaming responses and RAG
 
 ### **Authentication Routes**
 
@@ -366,6 +420,8 @@ npm run promote-admin your-email@example.com
 - `/api/profile/*` - Profile management
 - `/api/admin/users/*` - Admin user management
 - `/api/chat/stream` - AI chat streaming endpoint
+- `/api/rag/ingest` - Document ingestion endpoint
+- `/api/rag/retrieve` - Context retrieval endpoint
 
 ### **Chat Management API**
 
@@ -403,14 +459,30 @@ npm run seed         # Seed database with sample data
 npm run promote-admin <email>  # Promote user to admin role
 ```
 
+### **Docker Services**
+
+```bash
+docker-compose up -d                    # Start all services
+docker-compose up embedding-service -d  # Start only embedding service
+docker-compose down                     # Stop all services
+```
+
 ## 🎯 Key Features Breakdown
+
+### **RAG System Flow**
+
+1. **Document Upload** → File validation → Text extraction → Chunking
+2. **Embedding Generation** → Python service → Gemini API → Vector storage
+3. **Context Retrieval** → User query → Vector similarity → Relevant chunks
+4. **AI Enhancement** → Context + query → Enhanced AI response → Citations
 
 ### **AI Chat Flow**
 
 1. **Model Selection** → Choose AI model → Start conversation
 2. **Streaming Response** → Word-by-word streaming → Real-time display
-3. **Chat Management** → Auto-rename → Manual organization
-4. **Security Guidance** → Expert advice → Interactive learning
+3. **Context Integration** → RAG context → Enhanced responses → Citations
+4. **Chat Management** → Auto-rename → Manual organization
+5. **Security Guidance** → Expert advice → Interactive learning
 
 ### **Message Versioning Flow**
 
@@ -441,6 +513,7 @@ npm run promote-admin <email>  # Promote user to admin role
 3. **Responsive** → Perfect display on all devices
 4. **Accessibility** → ARIA labels and keyboard navigation
 5. **Streaming** → Real-time AI response streaming
+6. **Markdown** → Rich text formatting with syntax highlighting
 
 ### **Enhanced Chat Experience**
 
@@ -450,6 +523,8 @@ npm run promote-admin <email>  # Promote user to admin role
 4. **Professional Modals** → Beautiful modal forms instead of browser prompts
 5. **Empty States** → Beautiful UI when no conversations exist
 6. **Page Continuity** → Resume last active chat after page reload
+7. **File Upload** → Drag-and-drop file upload with validation
+8. **Citation Display** → Source documents with relevance scores
 
 ## 🔒 Security Implementation
 
@@ -488,6 +563,13 @@ npm run promote-admin <email>  # Promote user to admin role
 - **Rate Limiting** - Protection against AI API abuse
 - **Error Handling** - Graceful AI service error management
 
+### **RAG Security**
+
+- **File Validation** - Strict file type and size validation
+- **Content Sanitization** - All uploaded content sanitized before processing
+- **Vector Security** - Secure embedding generation and storage
+- **Access Control** - User-specific document access and retrieval
+
 ## 🚀 Deployment
 
 ### **Production Checklist**
@@ -496,6 +578,7 @@ npm run promote-admin <email>  # Promote user to admin role
 - ✅ Configure production database URL
 - ✅ Set secure `AUTH_SECRET`
 - ✅ Configure `GOOGLE_AI_API_KEY` for ShieldBot
+- ✅ Configure `EMBEDDING_API_URL` for RAG
 - ✅ Enable SSL for database connections
 - ✅ Configure reverse proxy
 - ✅ Set up monitoring and logging
@@ -504,7 +587,13 @@ npm run promote-admin <email>  # Promote user to admin role
 
 ```bash
 # Build and run with Docker Compose
-docker-compose -f docker-compose.full.yml up -d
+docker-compose up -d
+
+# Check service status
+docker-compose ps
+
+# View logs
+docker-compose logs -f
 ```
 
 ## 📊 Performance Optimizations
@@ -516,6 +605,7 @@ docker-compose -f docker-compose.full.yml up -d
 - **TailwindCSS Purging** - Optimized CSS for production
 - **Image Optimization** - Compressed and optimized assets
 - **Streaming Optimization** - Efficient AI response streaming
+- **Markdown Rendering** - Optimized syntax highlighting
 
 ### **Backend**
 
@@ -524,6 +614,14 @@ docker-compose -f docker-compose.full.yml up -d
 - **Caching** - Strategic caching implementation
 - **Error Handling** - Graceful error management
 - **AI Response Caching** - Optimized AI service calls
+- **Vector Indexing** - Optimized vector similarity search
+
+### **RAG System**
+
+- **Chunking Strategy** - Optimal document chunking for context
+- **Vector Indexing** - Efficient similarity search with pgvector
+- **Embedding Caching** - Cached embeddings for performance
+- **Context Filtering** - Smart context selection and ranking
 
 ### **Message Versioning System**
 
@@ -553,13 +651,42 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [TailwindCSS](https://tailwindcss.com/) - Utility-first CSS framework
 - [Drizzle ORM](https://orm.drizzle.team/) - TypeScript ORM
 - [PostgreSQL](https://www.postgresql.org/) - Advanced open source database
+- [pgvector](https://github.com/pgvector/pgvector) - Vector similarity search
 - [Google Gemini AI](https://ai.google.dev/) - Advanced AI capabilities
+- [Shiki](https://shiki.matsu.io/) - Syntax highlighting
+- [FastAPI](https://fastapi.tiangolo.com/) - Python web framework
 
 ---
 
-**ShieldAuth** - Built with ❤️ using modern web technologies for secure, scalable authentication with intelligent AI assistance.
+**ShieldAuth** - Built with ❤️ using modern web technologies for secure, scalable authentication with intelligent AI assistance and advanced RAG capabilities.
 
 ## 🔮 Recent Updates
+
+### **v4.0 - Complete RAG Integration** 🎉
+
+#### **🧠 Advanced RAG System**
+- ✅ **Document Ingestion** - Upload and process documents for AI context
+- ✅ **Vector Embeddings** - Automatic embedding generation using Gemini API
+- ✅ **Semantic Search** - Vector-based similarity search with pgvector
+- ✅ **Context Retrieval** - Automatic retrieval of relevant document snippets
+- ✅ **Citation System** - Track and display source documents with relevance scores
+- ✅ **Python Microservice** - Containerized embedding service with FastAPI
+
+#### **💬 Enhanced AI Chat Experience**
+- ✅ **Context-Aware Responses** - AI responses enhanced with retrieved document context
+- ✅ **File Upload Support** - Upload .txt, .doc, .docx, .pdf files for analysis
+- ✅ **Citation Display** - Show which documents informed the AI's answer
+- ✅ **Markdown Rendering** - Rich text formatting with syntax highlighting
+- ✅ **Code Highlighting** - Syntax highlighting for code blocks using Shiki
+- ✅ **Streaming Integration** - Real-time streaming with context integration
+
+#### **🔧 Technical Improvements**
+- ✅ **pgvector Integration** - PostgreSQL with vector similarity search
+- ✅ **Embedding Service** - Python FastAPI microservice for embeddings
+- ✅ **Database Schema** - RAG tables for documents, chunks, and embeddings
+- ✅ **API Endpoints** - Document ingestion and context retrieval endpoints
+- ✅ **Error Handling** - Comprehensive error handling for RAG operations
+- ✅ **Performance** - Optimized vector search and context retrieval
 
 ### **v3.0 - Complete Forking Implementation** 🎉
 
