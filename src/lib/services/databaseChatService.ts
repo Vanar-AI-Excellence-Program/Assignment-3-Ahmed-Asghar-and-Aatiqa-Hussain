@@ -292,6 +292,48 @@ export class DatabaseChatService {
     const title = firstMessage.trim().substring(0, 50);
     return title.length < firstMessage.trim().length ? title + "..." : title;
   }
+
+  // RAG: Ingestion stub - text only, no real embedding yet
+  async ingestTextDocument(params: {
+    userId: string;
+    conversationId?: string;
+    filename: string;
+    mimeType: string;
+    content: string;
+  }) {
+    try {
+      const res = await fetch("/api/rag/ingest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(params),
+      });
+      if (!res.ok) throw new Error("Failed to ingest document");
+      return await res.json();
+    } catch (e) {
+      console.error("ingestTextDocument error", e);
+      throw e;
+    }
+  }
+
+  // RAG: Retrieval stub - returns top chunks' text
+  async retrieveContext(params: {
+    query: string;
+    conversationId?: string;
+    topK?: number;
+  }) {
+    try {
+      const res = await fetch("/api/rag/retrieve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(params),
+      });
+      if (!res.ok) throw new Error("Failed to retrieve context");
+      return await res.json();
+    } catch (e) {
+      console.error("retrieveContext error", e);
+      throw e;
+    }
+  }
 }
 
 // Export singleton instance

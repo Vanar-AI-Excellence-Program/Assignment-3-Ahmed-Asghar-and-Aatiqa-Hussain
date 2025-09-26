@@ -5,7 +5,13 @@ import {
   timestamp,
   varchar,
   boolean,
+  jsonb,
 } from "drizzle-orm/pg-core";
+// Import pgvector's vector type from drizzle pg-core
+// drizzle-orm exposes `vector` when the pgvector extension is available
+// We import it dynamically to avoid breaking older versions
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { vector } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 // Users table - Auth.js compatible
@@ -78,6 +84,46 @@ export const chatMessages = pgTable("chat_messages", {
   isEdited: boolean("is_edited").default(false), // marks if this is an edited version
   isActive: boolean("is_active").default(true), // marks if this version is currently active in the conversation
   timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+// ------------------------------
+// RAG (Retrieval Augmented Generation) Tables
+// Inspired by your friend's implementation but adapted to our schema
+// ------------------------------
+
+// Documents uploaded by user
+export const ragDocuments = pgTable("rag_documents", {
+  id: varchar("id", { length: 255 }).primaryKey(),
+  userId: varchar("user_id", { length: 255 }).notNull(),
+  conversationId: varchar("conversation_id", { length: 255 }),
+  filename: varchar("filename", { length: 255 }).notNull(),
+  originalName: varchar("original_name", { length: 255 }).notNull(),
+  mimeType: varchar("mime_type", { length: 150 }).notNull(),
+  fileSize: integer("file_size").notNull(),
+  content: text("content").notNull(), // Raw extracted text
+  status: varchar("status", { length: 30 }).notNull().default("processing"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Document chunks for retrieval
+export const ragDocumentChunks = pgTable("rag_document_chunks", {
+  id: varchar("id", { length: 255 }).primaryKey(),
+  documentId: varchar("document_id", { length: 255 }).notNull(),
+  chunkIndex: integer("chunk_index").notNull(),
+  content: text("content").notNull(),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Embeddings for each chunk stored in pgvector
+export const ragDocumentEmbeddings = pgTable("rag_document_embeddings", {
+  id: varchar("id", { length: 255 }).primaryKey(),
+  chunkId: varchar("chunk_id", { length: 255 }).notNull(),
+  // Defaulting to 3072 dims to match Gemini family; can be changed later
+  embedding: vector("embedding", { dimensions: 3072 }).notNull(),
+  dimension: integer("dimension").notNull().default(3072),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // Relations

@@ -1,6 +1,7 @@
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { generateText, streamText } from "ai";
 import { env } from "$env/dynamic/private";
+import { EMBEDDING_API_URL } from "$lib/server/db";
 
 /**
  * AI Service for ShieldBot
@@ -36,6 +37,21 @@ export class AIService {
         "Missing Google AI API key. Please add GOOGLE_AI_API_KEY to your .env file. Get your API key from https://aistudio.google.com/"
       );
     }
+  }
+
+  // Call the Python microservice to embed text
+  async embedText(text: string): Promise<number[]> {
+    const res = await fetch(`${EMBEDDING_API_URL}/embed`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`Embedding failed (${res.status}): ${body}`);
+    }
+    const data = await res.json();
+    return data.embedding as number[];
   }
 
   /**
@@ -171,6 +187,8 @@ Always respond as ShieldBot, maintaining your friendly and helpful personality. 
           content: msg.content,
         }));
 
+      // If retrieval contexts provided upstream, they should already be
+      // appended to the latest user message content. We keep the API the same.
       const stream = await streamText({
         model: this.google!(model),
         system: this.getShieldBotSystemPrompt(userName),

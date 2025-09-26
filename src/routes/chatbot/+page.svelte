@@ -53,9 +53,9 @@
 		}, 50);
 	}
 
-	const handleSendMessage = async (text: string) => {
-		if (!text.trim() || isTyping || isStreaming) return;
-		await chatStore.sendMessage(text);
+	const handleSendMessage = async (text: string, file?: File) => {
+		if ((!text.trim() && !file) || isTyping || isStreaming) return;
+		await chatStore.sendMessage(text, file);
 	};
 
 	const handleClearChat = () => {

@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   postgres:
-    image: postgres:15-alpine
+    image: pgvector/pgvector:pg16
     container_name: shieldauth_postgres
     restart: unless-stopped
     environment:
@@ -37,6 +37,23 @@ services:
       - "8080:80"
     volumes:
       - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - shieldauth_network
+
+  embedding:
+    build:
+      context: .
+      dockerfile: embedding-service/Dockerfile
+    container_name: shieldauth_embedding
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - EMBEDDING_TARGET_DIM=3072
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy

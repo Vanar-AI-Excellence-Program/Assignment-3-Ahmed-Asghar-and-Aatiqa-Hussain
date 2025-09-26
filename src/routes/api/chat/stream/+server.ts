@@ -1,5 +1,6 @@
 import type { RequestHandler } from "./$types";
 import { aiService } from "$lib/server/ai";
+import { databaseChatService } from "$lib/services/databaseChatService";
 
 export const POST: RequestHandler = async ({ request, locals }) => {
   try {
@@ -16,6 +17,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
       message,
       conversationHistory = [],
       model = "gemini-2.5-pro",
+      conversationId,
     } = await request.json();
 
     if (!message || typeof message !== "string") {
@@ -80,32 +82,114 @@ export const POST: RequestHandler = async ({ request, locals }) => {
             extractedName: userName,
           });
 
-          // Generate streaming AI response with context
-          const responseStream = aiService.generateContextualStreamingResponse(
-            message,
-            conversationHistory,
-            userName,
-            model
-          );
+          // Retrieve relevant context from RAG
+          let contextSnippets: any[] = [];
+          let citations: any[] = [];
 
-          for await (const chunk of responseStream) {
-            const data =
-              JSON.stringify({
-                type: "chunk",
-                content: chunk,
-                timestamp: new Date().toISOString(),
-              }) + "\n";
+          try {
+            const contextResult = await databaseChatService.retrieveContext({
+              query: message,
+              conversationId,
+              topK: 3,
+            });
+            contextSnippets = contextResult.contexts || [];
 
-            controller.enqueue(new TextEncoder().encode(data));
+            // Format context for AI and prepare citations
+            if (contextSnippets.length > 0) {
+              const contextText = contextSnippets
+                .map((ctx, index) => `[Context ${index + 1}]: ${ctx.content}`)
+                .join("\n\n");
 
-            // Force flush the chunk immediately
-            await new Promise((resolve) => setTimeout(resolve, 0));
+              // Add context to the message
+              const enhancedMessage = `${message}\n\nRelevant context:\n${contextText}`;
+
+              // Prepare citations for display
+              citations = contextSnippets.map((ctx, index) => ({
+                id: ctx.id,
+                content:
+                  ctx.content.substring(0, 200) +
+                  (ctx.content.length > 200 ? "..." : ""),
+                score: ctx.score,
+                index: index + 1,
+              }));
+
+              // Generate streaming AI response with enhanced context
+              const responseStream =
+                aiService.generateContextualStreamingResponse(
+                  enhancedMessage,
+                  conversationHistory,
+                  userName,
+                  model
+                );
+
+              for await (const chunk of responseStream) {
+                const data =
+                  JSON.stringify({
+                    type: "chunk",
+                    content: chunk,
+                    timestamp: new Date().toISOString(),
+                  }) + "\n";
+
+                controller.enqueue(new TextEncoder().encode(data));
+
+                // Force flush the chunk immediately
+                await new Promise((resolve) => setTimeout(resolve, 0));
+              }
+            } else {
+              // No context found, use regular response
+              const responseStream =
+                aiService.generateContextualStreamingResponse(
+                  message,
+                  conversationHistory,
+                  userName,
+                  model
+                );
+
+              for await (const chunk of responseStream) {
+                const data =
+                  JSON.stringify({
+                    type: "chunk",
+                    content: chunk,
+                    timestamp: new Date().toISOString(),
+                  }) + "\n";
+
+                controller.enqueue(new TextEncoder().encode(data));
+
+                // Force flush the chunk immediately
+                await new Promise((resolve) => setTimeout(resolve, 0));
+              }
+            }
+          } catch (contextError) {
+            console.error("Context retrieval error:", contextError);
+            // Fallback to regular response if context retrieval fails
+            const responseStream =
+              aiService.generateContextualStreamingResponse(
+                message,
+                conversationHistory,
+                userName,
+                model
+              );
+
+            for await (const chunk of responseStream) {
+              const data =
+                JSON.stringify({
+                  type: "chunk",
+                  content: chunk,
+                  timestamp: new Date().toISOString(),
+                }) + "\n";
+
+              controller.enqueue(new TextEncoder().encode(data));
+
+              // Force flush the chunk immediately
+              await new Promise((resolve) => setTimeout(resolve, 0));
+            }
           }
 
-          // Send completion signal
+          // Send completion signal with citations
           const completionData =
             JSON.stringify({
               type: "complete",
+              citations: citations,
               timestamp: new Date().toISOString(),
             }) + "\n";
 

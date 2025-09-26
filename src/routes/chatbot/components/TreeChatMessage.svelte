@@ -1,6 +1,7 @@
 <script lang="ts">
   import { chatStore } from "$lib/stores/chatStore";
   import EnhancedMessageRenderer from "$lib/components/EnhancedMessageRenderer.svelte";
+  import MarkdownRenderer from "$lib/components/MarkdownRenderer.svelte";
 
   export let message: {
     id: string;
@@ -22,6 +23,9 @@
   let editedContent = message.content;
   let versionsLoaded = false;
   let showFirstMessagePopup = false;
+  
+  // Get citations from chat store
+  $: citations = $chatStore.currentCitations;
 
   $: maybeLoadVersions = (async () => {
     if (!versionsLoaded) {
@@ -160,7 +164,11 @@
             </div>
           </div>
         {:else}
-          <EnhancedMessageRenderer content={message.content} isStreaming={false} />
+          {#if message.role === 'assistant'}
+            <MarkdownRenderer content={message.content} citations={citations} />
+          {:else}
+            <EnhancedMessageRenderer content={message.content} isStreaming={false} />
+          {/if}
         {/if}
       </div>
 

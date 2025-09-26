@@ -1,14 +1,18 @@
 <script lang="ts">
-	export let onSendMessage: (message: string) => void;
+	export let onSendMessage: (message: string, file?: File) => void;
 	export let isTyping: boolean = false;
 
 	let message = '';
+	let selectedFile: File | null = null;
+	let showFileDialog = false;
+	let fileInputRef: HTMLInputElement;
 
 	const handleSubmit = (e: Event) => {
 		e.preventDefault();
-		if (message.trim() && !isTyping) {
-			onSendMessage(message.trim());
+		if ((message.trim() || selectedFile) && !isTyping) {
+			onSendMessage(message.trim(), selectedFile || undefined);
 			message = '';
+			selectedFile = null;
 		}
 	};
 
@@ -18,6 +22,66 @@
 			handleSubmit(e);
 		}
 	};
+
+	const handleFileSelect = () => {
+		fileInputRef.click();
+	};
+
+	const handleFileChange = (e: Event) => {
+		const target = e.target as HTMLInputElement;
+		const file = target.files?.[0];
+		
+		if (file) {
+			// Validate file type
+			const allowedTypes = [
+				'text/plain',
+				'application/pdf',
+				'application/msword',
+				'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+			];
+			
+			const allowedExtensions = ['.txt', '.pdf', '.doc', '.docx'];
+			const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+			
+			if (allowedTypes.includes(file.type) || allowedExtensions.includes(fileExtension)) {
+				selectedFile = file;
+				showFileDialog = false;
+			} else {
+				alert('Please select a valid file type (.txt, .doc, .docx, .pdf)');
+				target.value = '';
+			}
+		}
+	};
+
+	const removeFile = () => {
+		selectedFile = null;
+		if (fileInputRef) {
+			fileInputRef.value = '';
+		}
+	};
+
+	const getFileIcon = (fileName: string) => {
+		const extension = fileName.split('.').pop()?.toLowerCase();
+		switch (extension) {
+			case 'pdf':
+				return 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z';
+			case 'doc':
+			case 'docx':
+				return 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z';
+			case 'txt':
+				return 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z';
+			default:
+				return 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z';
+		}
+	};
+
+	const formatFileSize = (bytes: number) => {
+		if (bytes === 0) return '0 Bytes';
+		const k = 1024;
+		const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+		const i = Math.floor(Math.log(bytes) / Math.log(k));
+		return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+	};
 </script>
 
 <div class="border-t border-gray-700/50 bg-gradient-to-r from-gray-900/90 via-black/80 to-gray-900/90 backdrop-blur-sm p-4 relative overflow-hidden">
@@ -25,9 +89,19 @@
 	<div class="absolute inset-0 bg-gradient-to-r from-blue-500/2 via-transparent to-purple-500/2"></div>
 	<div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-blue-500/5 to-transparent rounded-full blur-xl"></div>
 	<div class="absolute bottom-0 left-0 w-16 h-16 bg-gradient-to-tr from-purple-500/5 to-transparent rounded-full blur-lg"></div>
+	<!-- Hidden file input -->
+	<input
+		bind:this={fileInputRef}
+		type="file"
+		accept=".txt,.doc,.docx,.pdf"
+		on:change={handleFileChange}
+		class="hidden"
+	/>
+
 	<form on:submit={handleSubmit} class="relative z-10 flex gap-3 items-center max-w-4xl mx-auto">
 		<button
 			type="button"
+			on:click={handleFileSelect}
 			class="group text-gray-400 hover:text-white hover:bg-gradient-to-br hover:from-gray-700/60 hover:to-gray-800/70 shrink-0 flex items-center justify-center h-12 w-12 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-gray-500/10 transform hover:-translate-y-0.5"
 			aria-label="Attach file"
 		>
@@ -70,4 +144,37 @@
 			</svg>
 		</button>
 	</form>
+
+	<!-- File Attachment Preview -->
+	{#if selectedFile}
+		<div class="relative z-10 max-w-4xl mx-auto mt-3">
+			<div class="bg-gray-800/50 border border-gray-600/60 rounded-xl p-4 backdrop-blur-sm">
+				<div class="flex items-center gap-3">
+					<!-- File Icon -->
+					<div class="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+						<svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={getFileIcon(selectedFile.name)} />
+						</svg>
+					</div>
+					
+					<!-- File Info -->
+					<div class="flex-1 min-w-0">
+						<div class="text-white font-medium truncate">{selectedFile.name}</div>
+						<div class="text-sm text-gray-400">{formatFileSize(selectedFile.size)}</div>
+					</div>
+					
+					<!-- Remove Button -->
+					<button
+						on:click={removeFile}
+						class="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+						aria-label="Remove file"
+					>
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+						</svg>
+					</button>
+				</div>
+			</div>
+		</div>
+	{/if}
 </div>

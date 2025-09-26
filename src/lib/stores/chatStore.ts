@@ -9,6 +9,19 @@ import {
   type ChatMessage,
 } from "$lib/services/databaseChatService";
 
+// Helper function to read file content
+async function readFileContent(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+      resolve(content);
+    };
+    reader.onerror = () => reject(new Error("Failed to read file"));
+    reader.readAsText(file);
+  });
+}
+
 export interface ChatState {
   messages: ChatMessage[];
   isTyping: boolean;
@@ -17,6 +30,7 @@ export interface ChatState {
   currentChatId: string | null;
   conversations: ChatConversation[];
   currentConversation: ChatConversation | null;
+  currentCitations: any[];
 }
 
 const initialState: ChatState = {
@@ -27,6 +41,7 @@ const initialState: ChatState = {
   currentChatId: null,
   conversations: [],
   currentConversation: null,
+  currentCitations: [],
 };
 
 function createChatStore() {
@@ -209,8 +224,8 @@ function createChatStore() {
     },
 
     // Send a message and get AI response
-    async sendMessage(content: string) {
-      if (!content.trim()) return;
+    async sendMessage(content: string, file?: File) {
+      if (!content.trim() && !file) return;
 
       update((state) => ({
         ...state,
@@ -255,10 +270,19 @@ function createChatStore() {
       let savedUserMessage = null;
       if (conversationId) {
         try {
+          // If there's a file, read its content and append to message
+          let messageContent = content;
+          if (file) {
+            const fileContent = await readFileContent(file);
+            messageContent = content
+              ? `${content}\n\n[File: ${file.name}]\n${fileContent}`
+              : `[File: ${file.name}]\n${fileContent}`;
+          }
+
           savedUserMessage = await databaseChatService.saveMessage({
             conversationId,
             role: "user",
-            content,
+            content: messageContent,
           });
         } catch (error) {
           console.error("Error saving user message:", error);
@@ -266,8 +290,16 @@ function createChatStore() {
       }
 
       // Add user message to UI with real database ID
+      let displayContent = content;
+      if (file) {
+        displayContent = content
+          ? `${content}\n\n📎 ${file.name}`
+          : `📎 ${file.name}`;
+      }
+
       const userMessage =
-        savedUserMessage || clientChatService.createMessage("user", content);
+        savedUserMessage ||
+        clientChatService.createMessage("user", displayContent);
       update((state) => ({
         ...state,
         messages: [...state.messages, userMessage],
@@ -308,8 +340,11 @@ function createChatStore() {
 
         // Stream AI response
         let accumulatedContent = "";
+        let citations: any[] = [];
+        // Use the message content that includes file content for AI processing
+        const messageForAI = savedUserMessage?.content || content;
         for await (const chunk of clientChatService.sendStreamingMessage(
-          content,
+          messageForAI,
           conversationHistory
         )) {
           if (chunk.type === "chunk" && chunk.content) {
@@ -335,6 +370,11 @@ function createChatStore() {
               }
             }, 10);
           } else if (chunk.type === "complete") {
+            // Store citations if provided
+            if (chunk.citations) {
+              citations = chunk.citations;
+            }
+
             // Finalize the message
             update((state) => ({
               ...state,
@@ -343,6 +383,7 @@ function createChatStore() {
                   ? { ...msg, content: accumulatedContent }
                   : msg
               ),
+              currentCitations: citations,
               isTyping: false,
               isStreaming: false,
             }));
