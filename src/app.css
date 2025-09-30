@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Hide scrollbars throughout the chatbot interface */
+.hide-scrollbar {
+  /* For Webkit browsers (Chrome, Safari, Edge) */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Webkit browsers */
+}
+
+/* Hide scrollbars in chat area */
+.chat-scroll-area {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+
+.chat-scroll-area::-webkit-scrollbar {
+  display: none; /* Webkit browsers */
+}
+
+/* Hide scrollbars in sidebar */
+.sidebar-scroll-area {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+
+.sidebar-scroll-area::-webkit-scrollbar {
+  display: none; /* Webkit browsers */
+}
+
+/* Hide scrollbars in message editing textarea */
+.message-edit-textarea {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+
+.message-edit-textarea::-webkit-scrollbar {
+  display: none; /* Webkit browsers */
+}
+
+/* Hide scrollbars in model dropdown */
+.model-dropdown-scroll {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+
+.model-dropdown-scroll::-webkit-scrollbar {
+  display: none; /* Webkit browsers */
+}

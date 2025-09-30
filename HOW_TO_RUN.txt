@@ -1,0 +1,19 @@
+cd embedding-service
+python -m venv myenv
+myenv/Scripts/Activate
+pip install -r requirements.txt
+python app.py
+
+curl http://localhost:8000/health
+
+npm install
+npm install shiki
+
+
+docker ps -a
+docker-compose up -d postgres
+docker ps
+
+
+npm run dev
+npm run db:studio
