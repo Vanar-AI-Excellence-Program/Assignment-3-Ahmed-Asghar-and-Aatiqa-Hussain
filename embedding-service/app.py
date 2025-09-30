@@ -9,7 +9,8 @@ import numpy as np
 
 # Use sentence-transformers for better performance and reliability
 MODEL_NAME = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
-TARGET_DIM = int(os.getenv("EMBEDDING_TARGET_DIM", "384"))  # Default for all-MiniLM-L6-v2
+# Pad/trim to match database vector column dimensions (schema expects 3072)
+TARGET_DIM = int(os.getenv("EMBEDDING_TARGET_DIM", "3072"))
 
 # Initialize the model
 try:
@@ -73,10 +74,11 @@ def embed(body: EmbedRequest):
         # Convert to list and ensure proper dimensions
         embedding_list = embedding.tolist() if hasattr(embedding, 'tolist') else list(embedding)
         
-        # Pad or trim to target dimension
+        # Pad or trim to target dimension (to match DB vector column)
         adjusted = _pad_or_trim(embedding_list, TARGET_DIM)
-        
-        return {"embedding": adjusted, "dim": len(embedding_list)}
+
+        # Return the actual dimension being stored
+        return {"embedding": adjusted, "dim": len(adjusted)}
         
     except Exception as e:
         print(f"❌ Embedding error: {e}")

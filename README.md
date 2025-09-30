@@ -39,6 +39,7 @@ A comprehensive, production-ready authentication application built with cutting-
 - **Chunking Strategy** - Intelligent document chunking for optimal context
 - **Embedding Generation** - Automatic vector embeddings using Gemini API
 - **Vector Storage** - pgvector database for efficient similarity search
+- **Relevance Gating** - Only use document context when similarity is strong enough; otherwise answer from general knowledge
 
 #### **AI Features**
 
@@ -49,6 +50,7 @@ A comprehensive, production-ready authentication application built with cutting-
 - **Interactive Prompts** - Pre-built conversation starters for common security topics
 - **Markdown Rendering** - Rich text formatting with syntax highlighting
 - **Code Highlighting** - Syntax highlighting for code blocks using Shiki
+- **Citations in UI** - Assistant messages show sources when document context is used
 
 #### **Advanced Message Management**
 
@@ -58,6 +60,7 @@ A comprehensive, production-ready authentication application built with cutting-
 - **Version Control** - Track message versions with `isActive` flags and `versionGroupId`
 - **Smart Context** - AI maintains proper conversation context for versioned messages
 - **First Message Protection** - Prevents forking of initial messages with user-friendly popup
+- **Editing UX** - While saving an edit or regenerating, the chat disables send/regenerate and shows “Generating response…”
 
 ### 🔐 **Authentication System**
 
@@ -76,6 +79,7 @@ A comprehensive, production-ready authentication application built with cutting-
 - **CSRF Protection** - Built-in cross-site request forgery protection
 - **Input Validation** - Comprehensive server-side validation
 - **Secure Headers** - Security-focused HTTP headers
+- **Profile Image Persistence** - OAuth profile image/name synced on link/sign-in; DB image preferred to prevent flicker; avatars use `referrerpolicy="no-referrer"`
 
 ### 👑 **Role-Based Access Control (RBAC)**
 
@@ -132,6 +136,7 @@ A comprehensive, production-ready authentication application built with cutting-
 - **Auto-Rename** - Intelligent chat naming based on conversation topics
 - **File Upload** - Drag-and-drop file upload with validation
 - **Citation Display** - Show source documents with relevance scores
+- **Doc-first Title** - If the first message includes a file, the chat auto-renames to that document’s name
 
 #### **Enhanced Chat Management**
 
@@ -181,6 +186,8 @@ GOOGLE_AI_API_KEY="your-google-ai-api-key"
 
 # Embedding Service Configuration (Required for RAG)
 EMBEDDING_API_URL="http://localhost:8000"
+# Embedding target dimension (must match DB vector column; defaults to 3072)
+EMBEDDING_TARGET_DIM="3072"
 
 # OAuth Configuration (Optional)
 GOOGLE_CLIENT_ID="your-google-client-id"
@@ -288,6 +295,8 @@ GOOGLE_AI_API_KEY="your-google-ai-api-key"
 
 # Embedding Service Configuration (Required for RAG)
 EMBEDDING_API_URL="http://localhost:8000"
+# Optional: override embedding dimension exposed by the Python service
+EMBEDDING_TARGET_DIM="3072"
 
 # Email Configuration (Optional - for email verification and password reset)
 SENDGRID_API_KEY="your-sendgrid-api-key"
@@ -305,6 +314,9 @@ NODE_ENV="development"
 # Start the embedding service
 docker-compose up embedding-service -d
 
+# Verify embedding service
+curl http://localhost:8000/health
+
 # Start the main application
 npm run dev
 ```
@@ -321,6 +333,7 @@ Visit [http://localhost:5173](http://localhost:5173) to see your application!
 4. **Upload Documents** - Upload files for AI to analyze and reference
 5. **Streaming Responses** - Watch AI responses appear word-by-word in real-time
 6. **View Citations** - See which documents informed the AI's answer
+7. **Out-of-Doc Questions** - If retrieval is not relevant enough, ShieldBot answers from its general knowledge
 
 ### **RAG Capabilities**
 
@@ -329,6 +342,7 @@ Visit [http://localhost:5173](http://localhost:5173) to see your application!
 - **Citation Tracking** - See exactly which documents and sections informed each answer
 - **Semantic Search** - Find relevant content using vector similarity
 - **Multi-Format Support** - Support for .txt, .doc, .docx, and .pdf files
+- **Configurable Relevance** - Document context is only attached when similarity passes an internal threshold (default ~0.62 cosine-like). You can raise/lower this threshold in `src/lib/server/ai.ts` if needed.
 
 ### **AI Capabilities**
 
@@ -569,6 +583,20 @@ docker-compose down                     # Stop all services
 - **Content Sanitization** - All uploaded content sanitized before processing
 - **Vector Security** - Secure embedding generation and storage
 - **Access Control** - User-specific document access and retrieval
+- **Thresholding** - Irrelevant context is ignored to avoid data leakage from unrelated documents
+
+## 🧪 Troubleshooting
+
+- Embeddings not saved:
+  - Ensure the embedding service is running: `curl http://localhost:8000/health` should return status ok and `target_dim: 3072`.
+  - Confirm your DB has pgvector and the embeddings column dimensions match 3072.
+  - Check server logs for `Saved embedding for chunk` messages.
+- Always citing docs for out-of-scope questions:
+  - The system now gates context by similarity. If it still feels too eager, increase the threshold in `src/lib/server/ai.ts`.
+- OAuth avatar missing or late:
+  - We persist the provider image on link/sign-in and prefer the DB image in session. Clear cache and refresh.
+- Edit/regenerate buttons clickable during generation:
+  - The UI disables these while generating and shows a status label. If you don’t see this, rebuild the app.
 
 ## 🚀 Deployment
 
@@ -665,6 +693,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ### **v4.0 - Complete RAG Integration** 🎉
 
 #### **🧠 Advanced RAG System**
+
 - ✅ **Document Ingestion** - Upload and process documents for AI context
 - ✅ **Vector Embeddings** - Automatic embedding generation using Gemini API
 - ✅ **Semantic Search** - Vector-based similarity search with pgvector
@@ -673,6 +702,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - ✅ **Python Microservice** - Containerized embedding service with FastAPI
 
 #### **💬 Enhanced AI Chat Experience**
+
 - ✅ **Context-Aware Responses** - AI responses enhanced with retrieved document context
 - ✅ **File Upload Support** - Upload .txt, .doc, .docx, .pdf files for analysis
 - ✅ **Citation Display** - Show which documents informed the AI's answer
@@ -681,6 +711,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - ✅ **Streaming Integration** - Real-time streaming with context integration
 
 #### **🔧 Technical Improvements**
+
 - ✅ **pgvector Integration** - PostgreSQL with vector similarity search
 - ✅ **Embedding Service** - Python FastAPI microservice for embeddings
 - ✅ **Database Schema** - RAG tables for documents, chunks, and embeddings
@@ -691,6 +722,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ### **v3.0 - Complete Forking Implementation** 🎉
 
 #### **🤖 Enhanced AI Chat Experience**
+
 - ✅ **Message Versioning** - Complete message forking and versioning system
 - ✅ **Edit & Regenerate** - Edit any message or regenerate AI responses
 - ✅ **Smart Context Handling** - AI maintains proper conversation context for versioned messages
@@ -698,6 +730,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - ✅ **First Message Protection** - Prevents forking of first messages with user-friendly popup
 
 #### **💬 Advanced Chat Management**
+
 - ✅ **Professional Rename Modal** - Beautiful modal form instead of browser prompts
 - ✅ **Smart Auto-Rename** - Automatic chat naming based on conversation topics
 - ✅ **Chat Deletion** - Complete cleanup of messages and conversations
@@ -705,6 +738,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - ✅ **Page Refresh Continuity** - Resume last active chat after page reload
 
 #### **🎨 Enhanced User Interface**
+
 - ✅ **Auto-Scroll Functionality** - Smooth scrolling to bottom on new messages
 - ✅ **Hidden Scrollbars** - Clean UI with custom scrollbar hiding
 - ✅ **Keyboard Shortcuts** - Enter/Escape key support for all modals
@@ -712,6 +746,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - ✅ **Dark Theme Consistency** - Unified dark theme throughout
 
 #### **🔧 Technical Improvements**
+
 - ✅ **Error Handling** - Comprehensive error handling and user feedback
 - ✅ **State Management** - Enhanced chat store with proper state management
 - ✅ **API Optimization** - Improved API endpoints for better performance
